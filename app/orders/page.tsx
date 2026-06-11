@@ -203,7 +203,7 @@ export default function OrdersPage() {
 
               {/* Actions Controls (Sprint 0A Manual Simulation) */}
               <div className="space-y-2 border-t border-slate-850 pt-4">
-                <h3 className="text-[11px] text-slate-450 font-bold uppercase tracking-wider text-slate-400">Status Controls (Simulated)</h3>
+                <h3 className="text-[11px] text-slate-450 font-bold uppercase tracking-wider text-slate-400">Simulated Status Controls (Sprint 0A Demo Only)</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedOrder.status === "reserved_waiting_payment" && (
                     <button

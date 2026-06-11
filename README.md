@@ -6,11 +6,17 @@ A commercial-ready portfolio MVP for 24/7 omni-channel order administration auto
 
 ## 1. Project Positioning & Purpose
 
-**OrderFlow Admin OS** is a **scalable product concept** and **upgrade-ready architecture** designed to solve back-office admin fatigue. In social commerce channels (LINE OA, Facebook, Instagram, TikTok), merchants often struggle with high message volumes, tracking stock holds, verifying payments slips, and capturing shipping addresses.
+**OrderFlow Admin OS** is a **commercial-ready portfolio MVP** and **upgrade-ready architecture** demonstrating a simulated live dashboard and order intake flow. It is designed to demonstrate how back-office workflows can be structured and decoupled to solve admin fatigue for Thai online sellers.
 
-This system demonstrates a decoupled, state-driven console dashboard that normalizes incoming customer messages, parses order intent, executes automatic inventory reservations, verifies payments, and coordinates shipments under strict deterministic rules.
+This system demonstrates a decoupled, state-driven portfolio dashboard UI, simulated channel adapters, local mock data calculations, and simulated stock reservation logic.
 
-* **Disclaimer**: This is a **portfolio MVP**. It is **NOT** a launched production SaaS, has no live database connection, and processes no real money or live LINE/Facebook API keys. All channels, slip checking, and NLP pipelines are simulated using **mock channel adapters** and rule-based workflow pipelines.
+> [!WARNING]
+> **Important Portfolio MVP & Wording Safety Notice**:
+> - **Simulated Dashboard**: All calculations, totals, and counts displayed on the dashboard are computed from static local mock data.
+> - **Mock Verification**: Payment and bank slip verification is completely mock/simulated. No real SlipOK or banking API connection exists.
+> - **Manual Demo Controls**: Order status shifts and verification loops are controlled manually via simulation buttons in the order details screen for Sprint 0A demo purposes.
+> - **No Active Integrations**: No real customer messages are processed, and no live connections or webhooks exist for LINE OA, Facebook Messenger, Facebook Live, TikTok Live, or Instagram.
+> - **No Production SaaS Claims**: This is a portfolio concept only. There is no user authentication, database integration, or billing setup.
 
 ---
 
