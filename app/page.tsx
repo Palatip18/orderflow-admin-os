@@ -105,7 +105,7 @@ export default function Home() {
             </div>
             <h3 className="text-lg font-bold text-white mb-2">SQL-Ready Data Models</h3>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Equipped with a production-ready PostgreSQL relational database design mapping customers, variant attributes, stock movements, and payment logs for future scaling.
+              Equipped with an upgrade-ready PostgreSQL relational database design mapping customers, variant attributes, stock movements, and payment logs for future scaling.
             </p>
           </div>
         </div>

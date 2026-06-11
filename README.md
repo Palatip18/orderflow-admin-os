@@ -24,8 +24,8 @@ This system demonstrates a decoupled, state-driven portfolio dashboard UI, simul
 
 1. **Omni-Channel Inbox Simulator**: Review incoming customer messages simulating LINE OA, Facebook Messenger, Facebook Live comments, Instagram DMs, and TikTok Live comments.
 2. **AI-Assisted Parsing Mockup**: Visual layout showing parsed parameters (colors, sizes, quantities, bank slip reference codes, shipping address blocks) alongside NLP confidence tags.
-3. **Live Operations Dashboard**: High-fidelity UI cards tracking real-time total sales volumes, collected revenues, outstanding balances, pending issues count, and log streams.
-4. **Interactive Orders & Stock Manager**: Real-time table of order statuses with manual status-override controls (e.g. simulating a successful SlipOK payment match).
+3. **Live Operations Dashboard**: Portfolio dashboard UI cards showing simulated live sales totals, collected revenue, outstanding balances, pending issue counts, and event log streams calculated from mock data.
+4. **Interactive Orders & Stock Manager**: Mock order status table with manual Sprint 0A simulation controls.
 5. **Product & Variants Matrix**: Visualizes SKU-level stocks including reserved buffers and completed sales.
 6. **SQL-Ready Database Architecture**: PostgreSQL draft tables schema and Business Analyst queries mapping customers, payments, stock movements, and audit log histories.
 
