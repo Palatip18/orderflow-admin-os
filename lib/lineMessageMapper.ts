@@ -8,13 +8,17 @@ import {
   collectAddress,
   createOrderEvent
 } from "./orderLifecycleSimulator";
-import { mockProducts, mockVariants } from "./mockData";
+import { mockProducts, mockVariants, mockPaymentProfile } from "./mockData";
 import { ParsedOrderIntent, Order, OrderEvent, MerchantNotification, OrderItem } from "@/types/orderflow";
 import {
   getPendingLineOrder,
   setPendingLineOrder,
   clearPendingLineOrder,
-  PendingLineOrderContext
+  PendingLineOrderContext,
+  getActiveLinePaymentOrder,
+  setActiveLinePaymentOrder,
+  clearActiveLinePaymentOrder,
+  ActiveLinePaymentOrderContext
 } from "./serverSimulationStore";
 
 const defaultSettings = {
@@ -44,7 +48,6 @@ export function normalizeSize(text: string): string | undefined {
   const lower = text.toLowerCase();
   if (/(ฟรีไซส์|ฟรีไซด์|freesize|free\s*size|ฟรี)/.test(lower)) return "Free Size";
   
-  // Clean SKU pattern first to avoid false matching S from A001 etc
   const cleaned = lower.replace(/[a-c]\d{3}/gi, "");
   
   if (/\bxl\b/.test(cleaned) || cleaned.includes("xl")) return "XL";
@@ -53,6 +56,27 @@ export function normalizeSize(text: string): string | undefined {
   if (/\bl\b/.test(cleaned) || /(^|[^a-z])l([^a-z]|$)/.test(cleaned) || cleaned.includes("ขาว l") || cleaned.includes("ดำ l") || cleaned.includes("ชมพู l") || cleaned.includes("กรม l") || cleaned.includes("ทอง l") || cleaned.includes(" l")) return "L";
   
   return undefined;
+}
+
+export function buildPaymentInstructionReply(
+  productName: string,
+  color: string,
+  size: string,
+  qty: number,
+  total: number,
+  profile: typeof mockPaymentProfile
+): string {
+  const colorText = color ? ` ${color}` : "";
+  const sizeText = size ? ` ${size}` : "";
+  return `รับออเดอร์จำลองเรียบร้อยค่ะ ${productName}${colorText}${sizeText} จำนวน ${qty} ชิ้น\n\n` +
+    `ยอดชำระ: ฿${total}\n\n` +
+    `กรุณาโอนเข้าบัญชีจำลอง:\n` +
+    `ธนาคาร: ${profile.bankName}\n` +
+    `ชื่อบัญชี: ${profile.accountName}\n` +
+    `เลขบัญชี: ${profile.accountNumber}\n` +
+    `PromptPay: ${profile.promptPayId}\n\n` +
+    `หลังโอนแล้ว กรุณาส่งสลิป หรือพิมพ์ “ชำระแล้ว” เพื่อให้ระบบจำลองการตรวจชำระเงินค่ะ\n\n` +
+    `หมายเหตุ: ข้อมูลบัญชีนี้เป็นข้อมูลจำลองสำหรับ Alpha testing เท่านั้น`;
 }
 
 export function mapLineTextToReply(
@@ -69,23 +93,94 @@ export function mapLineTextToReply(
   newNotification?: MerchantNotification;
 } {
   const intent = detectOrderIntent(text, "line", mockProducts);
-
-  // Extract and normalize color & size from user input
   const parsedColor = normalizeColor(text);
   const parsedSize = normalizeSize(text);
   const code = intent.parsedPayload?.productCode;
 
-  // 1. STATEFUL CONTEXT CHECK: User sent variants without product code, check if there is a pending variant context
+  // 1. Detect payment request keywords (e.g. ขอเลข, เลขบัญชี, บัญชี, โอนยังไง, จ่ายยังไง)
+  const isPaymentRequest = /(ขอเลข|เลขบัญชี|บัญชี|โอนยังไง|จ่ายยังไง|payment|pay|bank)/i.test(text);
+  if (isPaymentRequest && !code && !parsedColor && !parsedSize) {
+    const activePayment = getActiveLinePaymentOrder(senderId);
+    if (activePayment) {
+      const resentInstruction = buildPaymentInstructionReply(
+        activePayment.productName,
+        activePayment.color,
+        activePayment.size,
+        activePayment.quantity,
+        activePayment.total,
+        mockPaymentProfile
+      );
+
+      const event = createOrderEvent(
+        activePayment.orderId,
+        "payment_attempt",
+        "ลูกค้าขอเลขบัญชี / ระบบได้ทำการส่งข้อมูลชำระเงินซ้ำ (payment_instruction_resent)"
+      );
+
+      return {
+        replyText: resentInstruction,
+        intent,
+        newEvents: [event]
+      };
+    } else {
+      return {
+        replyText: "ตอนนี้ยังไม่มีออเดอร์ที่รอชำระเงินค่ะ กรุณาพิมพ์รหัสสินค้า เช่น A001 หรือ CF A001 ขาว S เพื่อเริ่มออเดอร์ก่อนค่ะ",
+        intent
+      };
+    }
+  }
+
+  // 2. Handle simulated payment keyword triggers ("ชำระแล้ว", "โอนแล้ว", "ส่งสลิปแล้ว")
+  const isMockPaymentConfirmation = /(ชำระแล้ว|โอนแล้ว|ส่งสลิปแล้ว)/.test(text);
+  if (isMockPaymentConfirmation && !code) {
+    const activePayment = getActiveLinePaymentOrder(senderId);
+    // Find the actual order object in context if possible
+    if (activeOrder && activeOrder.status === "reserved_waiting_payment") {
+      const { order: updatedOrder, payment } = mockVerifyPayment(activeOrder, "valid");
+      const event1 = createOrderEvent(updatedOrder.id, "payment_verified_mock", `จำลองการตรวจสอบสลิปสำเร็จ (ยอดเงิน ${payment.amount} บาท)`);
+      const event2 = createOrderEvent(updatedOrder.id, "status_change", `เปลี่ยนสถานะเป็น ${updatedOrder.status === "ready_to_ship" ? "พร้อมส่ง" : "ชำระเงินแล้ว/รอที่อยู่"}`);
+
+      const notif: MerchantNotification = {
+        id: `notif_${Math.random().toString(36).substr(2, 9)}`,
+        merchantId: "mch_001",
+        alertLevel: "info",
+        message: `ได้รับยอดชำระเงินจาก LINE แล้ว ${payment.amount} บาท`,
+        orderId: updatedOrder.id,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+
+      const replyText = updatedOrder.status === "ready_to_ship"
+        ? "ได้รับยอดโอนและที่อยู่เรียบร้อยค่ะ ระบบได้เปลี่ยนสถานะเป็นพร้อมส่งแล้วค่ะ"
+        : "ได้รับยอดโอนเรียบร้อยค่ะ กรุณาพิมพ์แจ้งที่อยู่สำหรับจัดส่งสินค้าด้วยค่ะ";
+
+      clearActiveLinePaymentOrder(senderId);
+
+      return {
+        replyText,
+        intent,
+        newOrder: updatedOrder,
+        newEvents: [event1, event2],
+        newNotification: notif
+      };
+    } else if (activePayment) {
+      // Fallback if activeOrder is not passed correctly but activePayment exists
+      return {
+        replyText: "ได้รับแจ้งโอนเงินจำลองแล้วค่ะ กรุณารอระบบตรวจสอบ หรือพิมพ์แจ้งที่อยู่จัดส่งได้เลยค่ะ",
+        intent
+      };
+    }
+  }
+
+  // 3. STATEFUL CONTEXT CHECK: User sent variants without product code, check if there is a pending variant context
   if (!code && (parsedColor || parsedSize)) {
     const pendingContext = getPendingLineOrder(senderId);
     if (pendingContext) {
       const product = mockProducts.find((p) => p.sku === pendingContext.productCode);
       if (product) {
-        // Resolve variant
         const color = parsedColor || "";
         const size = parsedSize || "";
 
-        // Find matching variant
         const matchedVariant = mockVariants.find(
           (v) =>
             v.productId === product.id &&
@@ -104,7 +199,6 @@ export function mapLineTextToReply(
           };
         }
 
-        // Create draft and reserve order
         const forcedIntent = {
           ...intent,
           parsedPayload: {
@@ -122,6 +216,7 @@ export function mapLineTextToReply(
         const event1 = createOrderEvent(reservedOrder.id, "variant_required", `ลูกค้าระบุรายละเอียดสินค้าเพิ่มเติม: ${matchedVariant.name}`);
         const event2 = createOrderEvent(reservedOrder.id, "order_confirmed", `ยืนยันออเดอร์จำลองรหัสสินค้า ${product.sku}`);
         const event3 = createOrderEvent(reservedOrder.id, "stock_reserved", `จำลองการจองสินค้า: ${product.name} (${matchedVariant.name})`);
+        const event4 = createOrderEvent(reservedOrder.id, "payment_attempt", "ส่งข้อมูลการชำระเงินให้ลูกค้า (payment_instruction_sent)");
 
         const notif: MerchantNotification = {
           id: `notif_${Math.random().toString(36).substr(2, 9)}`,
@@ -133,22 +228,44 @@ export function mapLineTextToReply(
           createdAt: new Date().toISOString()
         };
 
-        // Clear the pending context since order is successfully reserved
         clearPendingLineOrder(senderId);
 
+        // Set active payment context tracking
+        setActiveLinePaymentOrder(senderId, {
+          lineUserId: senderId,
+          orderId: reservedOrder.id,
+          productName: product.name,
+          productCode: product.sku,
+          color,
+          size,
+          quantity: pendingContext.quantity,
+          total: reservedOrder.totalAmount,
+          paymentStatus: "unpaid",
+          createdAt: new Date().toISOString()
+        });
+
+        const replyText = buildPaymentInstructionReply(
+          product.name,
+          color,
+          size,
+          pendingContext.quantity,
+          reservedOrder.totalAmount,
+          mockPaymentProfile
+        );
+
         return {
-          replyText: `รับออเดอร์จำลองเรียบร้อยค่ะ ${product.name} ${color} ${size} จำนวน ${pendingContext.quantity} ชิ้น ระบบจะจำลองการจองสินค้าและรอชำระเงินค่ะ`,
+          replyText,
           intent: forcedIntent,
           newOrder: reservedOrder,
           newItem: draftItem,
-          newEvents: [event1, event2, event3],
+          newEvents: [event1, event2, event3, event4],
           newNotification: notif
         };
       }
     }
   }
 
-  // 2. Handle address intent
+  // 4. Handle address intent
   if (intent.detectedIntent === "address") {
     if (activeOrder && (activeOrder.status === "paid_waiting_address" || activeOrder.status === "reserved_waiting_payment")) {
       const addressText = intent.parsedPayload?.addressText || text;
@@ -178,7 +295,7 @@ export function mapLineTextToReply(
     }
   }
 
-  // 3. Handle payment slip intent
+  // 5. Handle payment slip intent
   if (intent.detectedIntent === "payment_slip") {
     if (activeOrder && activeOrder.status === "reserved_waiting_payment") {
       const { order: updatedOrder, payment } = mockVerifyPayment(activeOrder, "valid");
@@ -199,6 +316,8 @@ export function mapLineTextToReply(
         ? "ได้รับยอดโอนและที่อยู่เรียบร้อยค่ะ ระบบได้เปลี่ยนสถานะเป็นพร้อมส่งแล้วค่ะ"
         : "ได้รับยอดโอนเรียบร้อยค่ะ กรุณาพิมพ์แจ้งที่อยู่สำหรับจัดส่งสินค้าด้วยค่ะ";
 
+      clearActiveLinePaymentOrder(senderId);
+
       return {
         replyText,
         intent,
@@ -214,7 +333,7 @@ export function mapLineTextToReply(
     }
   }
 
-  // 4. Handle standard catalog product codes
+  // 6. Handle standard catalog product codes
   if (!code) {
     return {
       replyText: "ระบบได้รับข้อความแล้วค่ะ แต่ยังไม่สามารถแปลงเป็นออเดอร์ได้ชัดเจน กรุณาพิมพ์รหัสสินค้า เช่น A001 หรือ CF A001 ขาว S ค่ะ",
@@ -230,10 +349,8 @@ export function mapLineTextToReply(
     };
   }
 
-  // Check if color or size is found. If yes, check variant compatibility.
   if (product.hasVariants) {
     if (!parsedColor || !parsedSize) {
-      // Create pending context state so user can reply with variants color/size in the next message
       const qty = intent.parsedPayload?.quantity || 1;
       const newContext: PendingLineOrderContext = {
         lineUserId: senderId,
@@ -253,7 +370,6 @@ export function mapLineTextToReply(
       };
     }
 
-    // Both color and size are present in current full command message (e.g. CF A001 ขาว S)
     const matchedVariant = mockVariants.find(
       (v) =>
         v.productId === product.id &&
@@ -272,7 +388,6 @@ export function mapLineTextToReply(
       };
     }
 
-    // Variant found and is compatible, proceed with reservation order
     const qty = intent.parsedPayload?.quantity || 1;
     const isAvail = matchedVariant.availableStock >= qty;
 
@@ -299,6 +414,7 @@ export function mapLineTextToReply(
     const event1 = createOrderEvent(reservedOrder.id, "order_detected", `พบความต้องการสั่งซื้อ: ${product.name}`);
     const event2 = createOrderEvent(reservedOrder.id, "order_confirmed", `ยืนยันออเดอร์จำลองรหัสสินค้า ${product.sku}`);
     const event3 = createOrderEvent(reservedOrder.id, "stock_reserved", `จำลองการจองสินค้า: ${product.name}`);
+    const event4 = createOrderEvent(reservedOrder.id, "payment_attempt", "ส่งข้อมูลการชำระเงินให้ลูกค้า (payment_instruction_sent)");
 
     const notif: MerchantNotification = {
       id: `notif_${Math.random().toString(36).substr(2, 9)}`,
@@ -310,20 +426,42 @@ export function mapLineTextToReply(
       createdAt: new Date().toISOString()
     };
 
-    // Clean up any stale user pending context states
     clearPendingLineOrder(senderId);
 
+    // Set active payment context tracking
+    setActiveLinePaymentOrder(senderId, {
+      lineUserId: senderId,
+      orderId: reservedOrder.id,
+      productName: product.name,
+      productCode: product.sku,
+      color: parsedColor,
+      size: parsedSize,
+      quantity: qty,
+      total: reservedOrder.totalAmount,
+      paymentStatus: "unpaid",
+      createdAt: new Date().toISOString()
+    });
+
+    const replyText = buildPaymentInstructionReply(
+      product.name,
+      parsedColor,
+      parsedSize,
+      qty,
+      reservedOrder.totalAmount,
+      mockPaymentProfile
+    );
+
     return {
-      replyText: `รับออเดอร์จำลองเรียบร้อยค่ะ ${product.name} ${parsedColor} ${parsedSize} จำนวน ${qty} ชิ้น ระบบจะจำลองการจองสินค้าและรอชำระเงินค่ะ`,
+      replyText,
       intent: forcedIntent,
       newOrder: reservedOrder,
       newItem: draftItem,
-      newEvents: [event1, event2, event3],
+      newEvents: [event1, event2, event3, event4],
       newNotification: notif
     };
   }
 
-  // Product has no variants (e.g. C003)
+  // Product has no variants
   const qty = intent.parsedPayload?.quantity || 1;
   const isAvail = product.availableStock >= qty;
 
@@ -340,6 +478,7 @@ export function mapLineTextToReply(
   const event1 = createOrderEvent(reservedOrder.id, "order_detected", `พบความต้องการสั่งซื้อ: ${product.name}`);
   const event2 = createOrderEvent(reservedOrder.id, "order_confirmed", `ยืนยันออเดอร์จำลองรหัสสินค้า ${product.sku}`);
   const event3 = createOrderEvent(reservedOrder.id, "stock_reserved", `จำลองการจองสินค้า: ${product.name}`);
+  const event4 = createOrderEvent(reservedOrder.id, "payment_attempt", "ส่งข้อมูลการชำระเงินให้ลูกค้า (payment_instruction_sent)");
 
   const notif: MerchantNotification = {
     id: `notif_${Math.random().toString(36).substr(2, 9)}`,
@@ -353,12 +492,35 @@ export function mapLineTextToReply(
 
   clearPendingLineOrder(senderId);
 
+  // Set active payment context tracking
+  setActiveLinePaymentOrder(senderId, {
+    lineUserId: senderId,
+    orderId: reservedOrder.id,
+    productName: product.name,
+    productCode: product.sku,
+    color: "",
+    size: "",
+    quantity: qty,
+    total: reservedOrder.totalAmount,
+    paymentStatus: "unpaid",
+    createdAt: new Date().toISOString()
+  });
+
+  const replyText = buildPaymentInstructionReply(
+    product.name,
+    "",
+    "",
+    qty,
+    reservedOrder.totalAmount,
+    mockPaymentProfile
+  );
+
   return {
-    replyText: `รับออเดอร์จำลองเรียบร้อยค่ะ ${product.name}  จำนวน ${qty} ชิ้น ระบบจะจำลองการจองสินค้าและรอชำระเงินค่ะ`,
+    replyText,
     intent,
     newOrder: reservedOrder,
     newItem: draftItem,
-    newEvents: [event1, event2, event3],
+    newEvents: [event1, event2, event3, event4],
     newNotification: notif
   };
 }

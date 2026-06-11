@@ -37,6 +37,15 @@ export const mockSettings: MerchantSettings = {
   updatedAt: "2026-06-11T04:00:00Z",
 };
 
+export const mockPaymentProfile = {
+  method: "bank_transfer",
+  bankName: "ธนาคารตัวอย่าง (Demo Bank)",
+  accountName: "OrderFlow Demo Shop",
+  accountNumber: "000-0-00000-0",
+  promptPayId: "000-000-0000",
+  note: "ข้อมูลบัญชีนี้เป็นข้อมูลจำลองสำหรับทดสอบเท่านั้น",
+};
+
 // 2. Sales Channels
 export const mockChannels: SalesChannel[] = [
   { id: "ch_line", name: "LINE Official Account (@chabafashion)", type: "line", isActive: true, createdAt: "2026-01-15T08:00:00Z" },

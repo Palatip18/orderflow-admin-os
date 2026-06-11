@@ -53,3 +53,16 @@ Add the LINE Official Account using the QR code in the Messaging API tab and run
    - **Expected Bot Reply**: `พบสินค้า Classic Elephant Pants (กางเกงช้างรุ่นคลาสสิก) ค่ะ แต่สี/ไซด์ที่เลือกยังไม่มีใน catalog จำลอง กรุณาเลือกจากตัวเลือกที่มี: Black / Free Size, Navy / Free Size, White / S ค่ะ`
    - *Bot lists available variants instead of looping into a generic error.*
 
+### Test Sequence D — Payment Instruction Delivery
+1. **Send Message 1**: `สนใจกางเกงช้างครับ A001`
+2. **Send Message 2**: `ขาว S`
+   - **Expected Bot Reply**: Should accept order and append the bank transfer/PromptPay details (ยอดชำระ: ฿199, ธนาคารตัวอย่าง (Demo Bank), เลขบัญชี: 000-0-00000-0) immediately in the same message.
+
+### Test Sequence E — Resend Payment Details
+1. *Ensure you have an active waiting payment order from sequence D.*
+2. **Send Message**: `ขอเลข` (or `เลขบัญชี`, `โอนยังไง`, `จ่ายยังไง`)
+   - **Expected Bot Reply**: Bot resends the bank transfer details for the current active order (`Classic Elephant Pants`, ยอดชำระ: ฿199).
+3. **Send Message (No Active Order)**: Clear simulation state, then send `ขอเลข`
+   - **Expected Bot Reply**: `ตอนนี้ยังไม่มีออเดอร์ที่รอชำระเงินค่ะ กรุณาพิมพ์รหัสสินค้า เช่น A001 หรือ CF A001 ขาว S เพื่อเริ่มออเดอร์ก่อนค่ะ`
+
+

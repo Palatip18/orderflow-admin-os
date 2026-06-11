@@ -11,6 +11,19 @@ export interface PendingLineOrderContext {
   status: "waiting_variant";
 }
 
+export interface ActiveLinePaymentOrderContext {
+  lineUserId: string;
+  orderId: string;
+  productName: string;
+  productCode: string;
+  color: string;
+  size: string;
+  quantity: number;
+  total: number;
+  paymentStatus: "unpaid";
+  createdAt: string;
+}
+
 interface ServerStore {
   incomingMessages: IncomingMessage[];
   orders: Order[];
@@ -18,6 +31,7 @@ interface ServerStore {
   notifications: MerchantNotification[];
   items: OrderItem[];
   pendingLineOrders: Record<string, PendingLineOrderContext>;
+  activeLinePaymentOrders: Record<string, ActiveLinePaymentOrderContext>;
 }
 
 // Ensure singleton across Hot Module Replacement in Next.js dev server
@@ -33,6 +47,7 @@ if (!globalForStore.__orderflow_server_store) {
     notifications: [],
     items: [],
     pendingLineOrders: {},
+    activeLinePaymentOrders: {},
   };
 }
 
@@ -112,6 +127,18 @@ export function clearPendingLineOrder(userId: string): void {
   delete store.pendingLineOrders[userId];
 }
 
+export function setActiveLinePaymentOrder(userId: string, context: ActiveLinePaymentOrderContext): void {
+  store.activeLinePaymentOrders[userId] = context;
+}
+
+export function getActiveLinePaymentOrder(userId: string): ActiveLinePaymentOrderContext | undefined {
+  return store.activeLinePaymentOrders[userId];
+}
+
+export function clearActiveLinePaymentOrder(userId: string): void {
+  delete store.activeLinePaymentOrders[userId];
+}
+
 export function resetServerStore(): void {
   store.incomingMessages = [];
   store.orders = [];
@@ -119,4 +146,5 @@ export function resetServerStore(): void {
   store.notifications = [];
   store.items = [];
   store.pendingLineOrders = {};
+  store.activeLinePaymentOrders = {};
 }
