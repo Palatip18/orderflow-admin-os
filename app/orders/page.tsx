@@ -3,14 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { mockOrders, mockCustomers, mockOrderItems, mockOrderEvents, mockProducts, mockVariants } from "@/lib/mockData";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, CHANNEL_LABELS } from "@/lib/statusLabels";
-import { Order, OrderStatus, OrderItem } from "@/types/orderflow";
-import { getSimulatedOrders, updateSimulatedOrder, getSimulatedOrderItems } from "@/lib/localOrderState";
+import { Order, OrderStatus, OrderItem, IncomingMessage, OrderEvent } from "@/types/orderflow";
+import { getSimulatedOrders, updateSimulatedOrder, getSimulatedOrderItems, getSimulatedIncomingMessages, getSimulatedEvents } from "@/lib/localOrderState";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [orderItems, setOrderItems] = useState<OrderItem[]>(mockOrderItems);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(mockOrders[0]?.id || null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [incomingMessages, setIncomingMessages] = useState<IncomingMessage[]>([]);
+  const [events, setEvents] = useState<OrderEvent[]>([]);
 
   useEffect(() => {
     const simOrders = getSimulatedOrders();
@@ -20,6 +22,12 @@ export default function OrdersPage() {
     const simItems = getSimulatedOrderItems();
     const mergedItems = [...simItems, ...mockOrderItems.filter((mi) => !simItems.some((si) => si.id === mi.id))];
     setOrderItems(mergedItems);
+
+    const simMsgs = getSimulatedIncomingMessages();
+    setIncomingMessages(simMsgs);
+
+    const simEvents = getSimulatedEvents();
+    setEvents(simEvents);
 
     if (merged.length > 0) {
       setSelectedOrderId(merged[0].id);
@@ -41,9 +49,17 @@ export default function OrdersPage() {
   const selectedItems = selectedOrder
     ? orderItems.filter((item) => item.orderId === selectedOrder.id)
     : [];
+  
   const selectedEvents = selectedOrder
-    ? mockOrderEvents.filter((evt) => evt.orderId === selectedOrder.id)
+    ? [
+        ...events.filter((evt) => evt.orderId === selectedOrder.id),
+        ...mockOrderEvents.filter((evt) => evt.orderId === selectedOrder.id && !events.some((se) => se.id === evt.id))
+      ]
     : [];
+
+  const linkedMessage = selectedOrder
+    ? incomingMessages.find((m) => m.orderId === selectedOrder.id)
+    : null;
 
   const filteredOrders = statusFilter === "all"
     ? orders
@@ -120,6 +136,7 @@ export default function OrdersPage() {
                   const statusInfo = ORDER_STATUS_LABELS[order.status];
                   const payInfo = PAYMENT_STATUS_LABELS[order.paidAmount >= order.totalAmount ? "paid" : order.paidAmount > 0 ? "partial_paid" : "unpaid"];
                   const isSelected = selectedOrderId === order.id;
+                  const isSimulated = !mockOrders.some((mo) => mo.id === order.id);
 
                   return (
                     <tr
@@ -129,7 +146,12 @@ export default function OrdersPage() {
                         isSelected ? "bg-slate-900/70" : ""
                       }`}
                     >
-                      <td className="p-4 font-mono font-bold text-white">{order.id}</td>
+                      <td className="p-4 font-mono font-bold text-white">
+                        <div>{order.id}</div>
+                        {isSimulated && (
+                          <span className="text-[9px] text-emerald-400 font-sans font-bold block mt-0.5">จำลองจาก Simulator</span>
+                        )}
+                      </td>
                       <td className="p-4 text-slate-200">{customer?.name || "ไม่ทราบชื่อ"}</td>
                       <td className="p-4">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${channel?.bgClass} ${channel?.textClass}`}>
@@ -172,6 +194,12 @@ export default function OrdersPage() {
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">รายละเอียดออเดอร์ (Order Details)</span>
                   <h2 className="text-lg font-bold text-white font-mono mt-0.5">{selectedOrder.id}</h2>
                   <p className="text-[11px] text-slate-400 mt-1">สร้างเมื่อ: {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+                  
+                  {!mockOrders.some((mo) => mo.id === selectedOrder.id) && (
+                    <span className="px-2 py-0.5 text-[9px] font-bold text-emerald-450 bg-emerald-950/50 border border-emerald-500/20 text-emerald-400 rounded-full mt-1 inline-block">
+                      จำลองจาก Simulator
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1 items-end">
                   <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${ORDER_STATUS_LABELS[selectedOrder.status].bgClass} ${ORDER_STATUS_LABELS[selectedOrder.status].textClass} ${ORDER_STATUS_LABELS[selectedOrder.status].borderClass}`}>
@@ -180,11 +208,34 @@ export default function OrdersPage() {
                 </div>
               </div>
 
+              {/* Source Channel & original message */}
+              <div className="space-y-2 text-xs">
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">ช่องทางและที่มาออเดอร์</h3>
+                <div className="bg-slate-900 border border-slate-850 p-3 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">ช่องทางขาย:</span>
+                    <span className="font-semibold text-slate-200">{CHANNEL_LABELS[selectedOrder.channelType]?.label}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">ประวัติสตรีมเหตุการณ์:</span>
+                    <span className="font-semibold text-slate-200">{selectedEvents.length} รายการ</span>
+                  </div>
+                  {linkedMessage && (
+                    <div className="pt-1 border-t border-slate-800">
+                      <span className="text-slate-500 block mb-1">ข้อความเริ่มต้นจากลูกค้า:</span>
+                      <p className="p-2 rounded bg-slate-950 border border-slate-800 text-slate-300 italic">
+                        "{linkedMessage.rawContent}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Customer */}
               <div className="space-y-2">
                 <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">ข้อมูลลูกค้า (Customer Details)</h3>
                 <div className="text-xs bg-slate-900 border border-slate-850 p-3 rounded-lg space-y-1">
-                  <p className="font-bold text-slate-200">{selectedCustomer?.name}</p>
+                  <p className="font-bold text-slate-200">{selectedCustomer?.name || (linkedMessage ? linkedMessage.senderName : "ไม่ระบุ")}</p>
                   {selectedCustomer?.phone && <p className="text-slate-400">เบอร์โทรศัพท์: {selectedCustomer.phone}</p>}
                   <p className="mt-1 text-slate-400 leading-relaxed">
                     <span className="font-semibold text-slate-500">ที่อยู่จัดส่ง:</span> {selectedOrder.shippingAddress || selectedCustomer?.shippingAddress || "ไม่ได้ระบุ"}
@@ -206,6 +257,11 @@ export default function OrdersPage() {
                           <p className="text-[9px] text-slate-500">
                             SKU: {variant ? variant.sku : product?.sku || "N/A"}
                           </p>
+                          {variant && (
+                            <p className="text-[10px] text-emerald-450 mt-0.5">
+                              ตัวเลือก: <span className="font-bold">{variant.name}</span>
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-slate-200">{formatTHB(item.totalAmount)}</p>
@@ -263,7 +319,7 @@ export default function OrdersPage() {
                   {selectedOrder.status === "issue" && (
                     <button
                       onClick={() => updateStatus(selectedOrder.id, "ready_to_ship")}
-                      className="bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded"
+                      className="bg-slate-700 hover:bg-slate-655 text-white text-[10px] font-bold px-2.5 py-1.5 rounded"
                     >
                       แก้ไข/ข้ามเคสมีปัญหา (Override)
                     </button>

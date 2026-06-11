@@ -122,6 +122,7 @@ export interface IncomingMessage {
   mediaUrl?: string;
   intent?: ParsedOrderIntent;
   status: "pending" | "processed" | "ignored";
+  orderId?: string;
   timestamp: string;
 }
 

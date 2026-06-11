@@ -1,13 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
-import { mockMessages } from "@/lib/mockData";
-import { CHANNEL_LABELS, INTENT_LABELS } from "@/lib/statusLabels";
-import { IncomingMessage } from "@/types/orderflow";
+import React, { useState, useEffect } from "react";
+import { mockMessages, mockOrders } from "@/lib/mockData";
+import { CHANNEL_LABELS, INTENT_LABELS, ORDER_STATUS_LABELS } from "@/lib/statusLabels";
+import { IncomingMessage, Order } from "@/types/orderflow";
+import { getSimulatedIncomingMessages, getSimulatedOrders } from "@/lib/localOrderState";
 
 export default function UnifiedInboxPage() {
   const [messages, setMessages] = useState<IncomingMessage[]>(mockMessages);
-  const [selectedMessage, setSelectedMessage] = useState<IncomingMessage | null>(mockMessages[0] || null);
+  const [selectedMessage, setSelectedMessage] = useState<IncomingMessage | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    const simMsgs = getSimulatedIncomingMessages();
+    const merged = [...simMsgs, ...mockMessages.filter((msg) => !simMsgs.some((sm) => sm.id === msg.id))];
+    setMessages(merged);
+
+    const simOrders = getSimulatedOrders();
+    setOrders(simOrders);
+
+    if (merged.length > 0) {
+      setSelectedMessage(merged[0]);
+    }
+  }, []);
 
   const getStatusBadge = (status: IncomingMessage["status"]) => {
     switch (status) {
@@ -61,6 +76,13 @@ export default function UnifiedInboxPage() {
             {messages.map((msg) => {
               const channel = CHANNEL_LABELS[msg.channelType];
               const isSelected = selectedMessage?.id === msg.id;
+              const isSimulated = !mockMessages.some((m) => m.id === msg.id);
+
+              const linkedOrder = msg.orderId
+                ? (orders.find((o) => o.id === msg.orderId) || mockOrders.find((o) => o.id === msg.orderId))
+                : null;
+              const orderStatusInfo = linkedOrder ? ORDER_STATUS_LABELS[linkedOrder.status] : null;
+
               return (
                 <button
                   key={msg.id}
@@ -77,19 +99,35 @@ export default function UnifiedInboxPage() {
                     <span className="text-[10px] text-slate-500">{new Date(msg.timestamp).toLocaleTimeString()}</span>
                   </div>
 
-                  <div className="font-bold text-sm text-slate-200">{msg.senderName}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-bold text-sm text-slate-200">{msg.senderName}</div>
+                    {isSimulated && (
+                      <span className="px-2 py-0.5 text-[9px] font-bold text-emerald-450 bg-emerald-950/50 border border-emerald-500/20 text-emerald-450 rounded-full">
+                        จำลองจาก Simulator
+                      </span>
+                    )}
+                  </div>
+
                   <p className="text-xs text-slate-450 truncate w-full max-w-[240px] text-slate-400">
                     {msg.rawContent}
                   </p>
 
-                  <div className="flex justify-between items-center mt-1">
-                    {msg.intent ? (
-                      <span className="text-[10px] bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded font-mono">
-                        {INTENT_LABELS[msg.intent.detectedIntent].split(" (")[0]}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] bg-slate-900 text-slate-500 px-2 py-0.5 rounded">ไม่มี Intent</span>
-                    )}
+                  <div className="flex flex-wrap gap-2 items-center justify-between mt-1">
+                    <div className="flex gap-1.5 flex-wrap items-center">
+                      {msg.intent ? (
+                        <span className="text-[10px] bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded font-mono">
+                          {INTENT_LABELS[msg.intent.detectedIntent].split(" (")[0]}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] bg-slate-900 text-slate-500 px-2 py-0.5 rounded">ไม่มี Intent</span>
+                      )}
+
+                      {orderStatusInfo && (
+                        <span className={`text-[10px] border px-2 py-0.5 rounded font-semibold ${orderStatusInfo.bgClass} ${orderStatusInfo.textClass} ${orderStatusInfo.borderClass}`}>
+                          {orderStatusInfo.label.split(" (")[0]}
+                        </span>
+                      )}
+                    </div>
 
                     <span className={`text-[9px] px-2 py-0.5 rounded border uppercase ${getStatusBadge(msg.status)}`}>
                       {getStatusText(msg.status)}
@@ -110,7 +148,12 @@ export default function UnifiedInboxPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-bold text-white text-lg">{selectedMessage.senderName}</span>
-                    <span className="text-xs text-slate-500">ID: {selectedMessage.externalSenderId.slice(0, 10)}...</span>
+                    <span className="text-xs text-slate-500 font-mono">ID: {selectedMessage.externalSenderId.slice(0, 10)}...</span>
+                    {!mockMessages.some((m) => m.id === selectedMessage.id) && (
+                      <span className="px-2.5 py-0.5 text-[10px] font-bold text-emerald-450 bg-emerald-950/50 border border-emerald-500/20 text-emerald-400 rounded-full">
+                        จำลองจาก Simulator
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-400">
@@ -199,6 +242,33 @@ export default function UnifiedInboxPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Linked Order Status Display */}
+                {selectedMessage.orderId && (
+                  <div className="space-y-2 border-t border-slate-850 pt-6">
+                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Linked Order / ออเดอร์ที่เกี่ยวข้อง</p>
+                    <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-xs">
+                      <div>
+                        <span className="text-slate-500 uppercase font-mono block">Order ID</span>
+                        <span className="font-bold text-slate-200 font-mono text-sm mt-0.5 block">{selectedMessage.orderId}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-right mb-1">สถานะออเดอร์</span>
+                        {(() => {
+                          const linkedOrder = orders.find((o) => o.id === selectedMessage.orderId) || mockOrders.find((o) => o.id === selectedMessage.orderId);
+                          const orderStatusInfo = linkedOrder ? ORDER_STATUS_LABELS[linkedOrder.status] : null;
+                          return orderStatusInfo ? (
+                            <span className={`text-[10px] border px-2 py-0.5 rounded font-semibold ${orderStatusInfo.bgClass} ${orderStatusInfo.textClass} ${orderStatusInfo.borderClass}`}>
+                              {orderStatusInfo.label}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">ไม่พบสถานะ</span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

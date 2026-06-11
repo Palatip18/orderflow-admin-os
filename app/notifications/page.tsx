@@ -111,11 +111,18 @@ export default function NotificationsPage() {
 
                   <div className="flex-1 space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className={`text-[10px] uppercase font-bold tracking-wider ${
-                        not.alertLevel === "critical" ? "text-rose-400" : not.alertLevel === "warning" ? "text-amber-400" : "text-slate-400"
-                      }`}>
-                        {not.alertLevel === "critical" ? "วิกฤต (Critical)" : not.alertLevel === "warning" ? "แจ้งเตือน (Warning)" : "ทั่วไป (Info)"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] uppercase font-bold tracking-wider ${
+                          not.alertLevel === "critical" ? "text-rose-400" : not.alertLevel === "warning" ? "text-amber-400" : "text-slate-400"
+                        }`}>
+                          {not.alertLevel === "critical" ? "วิกฤต (Critical)" : not.alertLevel === "warning" ? "แจ้งเตือน (Warning)" : "ทั่วไป (Info)"}
+                        </span>
+                        {!mockNotifications.some((mn) => mn.id === not.id) && (
+                          <span className="px-1.5 py-0.2 text-[8px] font-bold bg-emerald-950/60 border border-emerald-500/20 text-emerald-400 rounded">
+                            Simulator Event
+                          </span>
+                        )}
+                      </div>
                       <span className="text-[10px] text-slate-500">{new Date(not.createdAt).toLocaleTimeString()}</span>
                     </div>
                     <p className="text-xs text-slate-200 leading-relaxed">{not.message}</p>

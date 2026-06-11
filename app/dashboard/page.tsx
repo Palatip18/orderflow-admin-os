@@ -43,7 +43,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">แดชบอร์ดสดแบบจำลอง (Live Dashboard)</h1>
-          <p className="text-sm text-slate-400">ข้อมูลในหน้านี้คำนวณจาก mock data และ browser-local simulation state เท่านั้น</p>
+          <p className="text-sm text-slate-400">ข้อมูลในหน้านี้คำนวณจาก mock data และ browser-local simulation state เท่านั้น (รวมข้อมูล mock และข้อมูลจำลองจาก Simulator ใน browser นี้)</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>

@@ -4,9 +4,11 @@ import { INTENT_LABELS } from "@/lib/statusLabels";
 
 interface ParsedIntentCardProps {
   intent: ParsedOrderIntent;
+  appliedColor?: string;
+  appliedSize?: string;
 }
 
-export default function ParsedIntentCard({ intent }: ParsedIntentCardProps) {
+export default function ParsedIntentCard({ intent, appliedColor, appliedSize }: ParsedIntentCardProps) {
   const payload = intent.parsedPayload || {};
   const isHighConfidence = intent.confidenceScore >= 0.8;
 
@@ -38,11 +40,23 @@ export default function ParsedIntentCard({ intent }: ParsedIntentCardProps) {
         </div>
         <div className="p-3 bg-slate-900 border border-slate-850 rounded-lg">
           <span className="text-[10px] text-slate-500 block uppercase font-mono">ไซส์ (Size)</span>
-          <span className="font-bold text-slate-200 mt-1 block">{payload.size || "ไม่ระบุ"}</span>
+          <span className="font-bold text-slate-200 mt-1 block">
+            {appliedSize ? (
+              <span className="text-emerald-400 font-semibold">{appliedSize} (เลือกแล้ว)</span>
+            ) : (
+              payload.size || "ไม่ระบุ"
+            )}
+          </span>
         </div>
         <div className="p-3 bg-slate-900 border border-slate-850 rounded-lg">
           <span className="text-[10px] text-slate-500 block uppercase font-mono">สี (Color)</span>
-          <span className="font-bold text-slate-200 mt-1 block">{payload.color || "ไม่ระบุ"}</span>
+          <span className="font-bold text-slate-200 mt-1 block">
+            {appliedColor ? (
+              <span className="text-emerald-400 font-semibold">{appliedColor} (เลือกแล้ว)</span>
+            ) : (
+              payload.color || "ไม่ระบุ"
+            )}
+          </span>
         </div>
       </div>
 

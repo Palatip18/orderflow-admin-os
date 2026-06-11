@@ -20,9 +20,12 @@ import {
   resetSimulationState,
   getSimulatedOrders,
   addSimulatedOrderItem,
-  addSimulatedStockMovement
+  addSimulatedStockMovement,
+  addSimulatedIncomingMessage,
+  getSimulatedIncomingMessages,
+  saveSimulatedIncomingMessages
 } from "@/lib/localOrderState";
-import { ChannelType, ParsedOrderIntent, Order, OrderItem, ProductVariant, OrderEvent, Product } from "@/types/orderflow";
+import { ChannelType, ParsedOrderIntent, Order, OrderItem, ProductVariant, OrderEvent, Product, IncomingMessage } from "@/types/orderflow";
 import { CHANNEL_LABELS } from "@/lib/statusLabels";
 import SimulationNotice from "@/components/SimulationNotice";
 import SimulatorStepCard from "@/components/SimulatorStepCard";
@@ -44,6 +47,7 @@ export default function SimulatorPage() {
 
   // Simulation State
   const [activeIntent, setActiveIntent] = useState<ParsedOrderIntent | null>(null);
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [activeItem, setActiveItem] = useState<OrderItem | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -73,6 +77,7 @@ export default function SimulatorPage() {
   const handleReset = () => {
     resetSimulationState();
     setActiveIntent(null);
+    setActiveMessageId(null);
     setActiveOrder(null);
     setActiveItem(null);
     setSelectedProduct(null);
@@ -87,6 +92,33 @@ export default function SimulatorPage() {
   const handleDetectIntent = () => {
     const intent = detectOrderIntent(inputText, selectedChannel, mockProducts);
     setActiveIntent(intent);
+
+    const msgId = `msg_${Date.now()}`;
+    setActiveMessageId(msgId);
+
+    // Save simulated incoming message to localStorage
+    const incomingMessage: IncomingMessage = {
+      id: msgId,
+      channelType: selectedChannel,
+      externalMessageId: `ext_msg_${Date.now()}`,
+      externalSenderId: `cust_${Date.now()}`,
+      senderName: selectedChannel === "line"
+        ? "สมชาย (LINE)"
+        : selectedChannel === "facebook_live"
+        ? "สมศรี (FB Live)"
+        : selectedChannel === "facebook_messenger"
+        ? "สมศักดิ์ (FB Messenger)"
+        : selectedChannel === "instagram_dm"
+        ? "สมหญิง (IG DM)"
+        : selectedChannel === "tiktok_live"
+        ? "สมหวัง (TikTok Live)"
+        : "ลูกค้าจำลอง (Simulator)",
+      rawContent: inputText,
+      intent: intent,
+      status: "pending",
+      timestamp: new Date().toISOString(),
+    };
+    addSimulatedIncomingMessage(incomingMessage);
 
     // Create event log
     const event = createOrderEvent(intent.id, "order_detected", `ตรวจพบข้อความจากลูกค้าผ่านทางช่องทางจำลอง ${CHANNEL_LABELS[selectedChannel].label}: "${inputText}"`);
@@ -134,6 +166,12 @@ export default function SimulatorPage() {
 
   const handleCreateDraft = () => {
     if (!activeIntent || !selectedProduct) return;
+
+    // Reservation Rule Guard: Ensure variant is selected if the product has variants
+    if (selectedProduct.hasVariants && !selectedVariant) {
+      alert("กรุณาเลือกตัวเลือกสินค้าก่อนดำเนินการจอง");
+      return;
+    }
     
     // Create draft
     const { order, item } = createDraftOrder(activeIntent, selectedProduct, selectedVariant || undefined);
@@ -167,6 +205,18 @@ export default function SimulatorPage() {
     addSimulatedStockMovement(reservationMovement);
     addSimulatedOrder(reservedOrder);
     addSimulatedEvent(draftEvent);
+
+    // Link simulated message to order
+    if (activeMessageId) {
+      const msgs = getSimulatedIncomingMessages();
+      const updatedMsgs = msgs.map((m) => {
+        if (m.id === activeMessageId) {
+          return { ...m, status: "processed" as const, orderId: order.id };
+        }
+        return m;
+      });
+      saveSimulatedIncomingMessages(updatedMsgs);
+    }
 
     const reserveEvent = createOrderEvent(order.id, "stock_reserved", `ระบบจองสินค้าจำนวน ${item.quantity} รายการแล้ว ระยะเวลาจองจะหมดอายุเวลา: ${new Date(reservedOrder.expiresAt || "").toLocaleTimeString()}`);
     setActiveEvents((prev) => [reserveEvent, ...prev]);
@@ -590,7 +640,13 @@ export default function SimulatorPage() {
 
         {/* Right Side Extraction Cards & Timelines */}
         <div className="space-y-6">
-          {activeIntent && <ParsedIntentCard intent={activeIntent} />}
+          {activeIntent && (
+            <ParsedIntentCard
+              intent={activeIntent}
+              appliedColor={selectedVariant ? selectedVariant.name.split(" / ")[0] : undefined}
+              appliedSize={selectedVariant ? selectedVariant.name.split(" / ")[1] : undefined}
+            />
+          )}
           
           <OrderLifecycleTimeline events={activeEvents} />
         </div>

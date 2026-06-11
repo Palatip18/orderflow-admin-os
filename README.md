@@ -62,6 +62,7 @@ This system demonstrates a decoupled, state-driven portfolio dashboard UI, simul
 * **Ready-to-Ship Queue**: Automatically transitions orders to logistics queues once payment and address inputs are validated.
 * **Mock Tracking Capture**: Dispatches orders to couriers with mock tracking codes.
 * **State Synchronization**: Live dashboard metrics, orders queue, and notification centers update immediately from simulated localStorage state.
+* **Local Simulation State**: Simulator-generated incoming messages, orders, events, and notifications are stored in browser-local simulation state and rendered across Inbox, Orders, Dashboard, and Notifications.
 
 ---
 

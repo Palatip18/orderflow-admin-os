@@ -1,4 +1,4 @@
-import { Order, OrderEvent, MerchantNotification, OrderItem, StockMovement } from "@/types/orderflow";
+import { Order, OrderEvent, MerchantNotification, OrderItem, StockMovement, IncomingMessage } from "@/types/orderflow";
 import { STORAGE_KEYS } from "./storageKeys";
 
 const isBrowser = typeof window !== "undefined";
@@ -143,6 +143,34 @@ export function addSimulatedNotification(notif: MerchantNotification): void {
   saveSimulatedNotifications([notif, ...current]);
 }
 
+// --- Simulated Incoming Messages Persistence ---
+export function getSimulatedIncomingMessages(): IncomingMessage[] {
+  if (!isBrowser) return [];
+  try {
+    const raw = localStorage.getItem("orderflow_simulated_messages");
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Failed to load simulated incoming messages:", e);
+    return [];
+  }
+}
+
+export function saveSimulatedIncomingMessages(messages: IncomingMessage[]): void {
+  if (!isBrowser) return;
+  try {
+    localStorage.setItem("orderflow_simulated_messages", JSON.stringify(messages));
+  } catch (e) {
+    console.error("Failed to save simulated incoming messages:", e);
+  }
+}
+
+export function addSimulatedIncomingMessage(message: IncomingMessage): void {
+  const current = getSimulatedIncomingMessages();
+  if (!current.some((m) => m.id === message.id)) {
+    saveSimulatedIncomingMessages([message, ...current]);
+  }
+}
+
 // --- Reset ---
 export function resetSimulationState(): void {
   if (!isBrowser) return;
@@ -151,6 +179,7 @@ export function resetSimulationState(): void {
     localStorage.removeItem("orderflow_simulated_items");
     localStorage.removeItem("orderflow_simulated_stock");
     localStorage.removeItem("orderflow_simulated_events");
+    localStorage.removeItem("orderflow_simulated_messages");
     localStorage.removeItem(STORAGE_KEYS.MOCK_NOTIFICATIONS);
   } catch (e) {
     console.error("Failed to reset simulation state:", e);
