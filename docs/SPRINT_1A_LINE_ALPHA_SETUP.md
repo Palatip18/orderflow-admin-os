@@ -10,7 +10,7 @@ This guide walks through configuring and testing the LINE Webhook integration on
 5. Go to the **Messaging API** tab, scroll to the bottom, and click **Issue** next to **Channel access token (long-lived)**. Copy this token.
 
 ## 2. Configure Local Environment Variables
-Create a file named `.env.local` in the root directory of this project:
+Create a file named `.env.local` in the root directory of this project (you can copy `.env.example` to start):
 ```env
 LINE_CHANNEL_SECRET=your_channel_secret_here
 LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token_here
