@@ -60,6 +60,7 @@ This system demonstrates a decoupled, state-driven portfolio dashboard UI, simul
 * **Mock Payment Verification**: Simulate SlipOK banking OCR scanning with multiple options (Valid, Mismatch, Duplicate).
 * **Mock Address Collection**: Collects shipping blocks without bypassing payment requirements.
 * **Ready-to-Ship Queue**: Automatically transitions orders to logistics queues once payment and address inputs are validated.
+* **Automation Logic**: After mock payment verification and address collection, the simulator automatically moves the order to ready-to-ship to reflect the intended automation logic.
 * **Mock Tracking Capture**: Dispatches orders to couriers with mock tracking codes.
 * **State Synchronization**: Live dashboard metrics, orders queue, and notification centers update immediately from simulated localStorage state.
 * **Local Simulation State**: Simulator-generated incoming messages, orders, events, and notifications are stored in browser-local simulation state and rendered across Inbox, Orders, Dashboard, and Notifications.

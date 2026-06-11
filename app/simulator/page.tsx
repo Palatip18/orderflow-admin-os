@@ -286,32 +286,20 @@ export default function SimulatorPage() {
   const handleSubmitAddress = () => {
     if (!activeOrder) return;
 
+    // Automatically transition to ready_to_ship once address is provided
     const updatedOrder = {
       ...activeOrder,
       shippingAddress: addressInput,
+      status: "ready_to_ship" as const,
       updatedAt: new Date().toISOString(),
     };
     setActiveOrder(updatedOrder);
 
     const addressEvent = createOrderEvent(updatedOrder.id, "address_received", `บันทึกที่อยู่จัดส่งของลูกค้าแล้ว: "${addressInput}"`);
-    setActiveEvents((prev) => [addressEvent, ...prev]);
+    const readyEvent = createOrderEvent(updatedOrder.id, "ready_to_ship", "บันทึกที่อยู่สำเร็จ ระบบทำการย้ายออเดอร์เข้าสู่คิวพร้อมส่ง (Ready to Ship) โดยอัตโนมัติ");
+    
+    setActiveEvents((prev) => [readyEvent, addressEvent, ...prev]);
     addSimulatedEvent(addressEvent);
-
-    upsertSimulatedOrder(updatedOrder);
-  };
-
-  const handleMoveToReadyToShip = () => {
-    if (!activeOrder) return;
-
-    const updatedOrder = {
-      ...activeOrder,
-      status: "ready_to_ship" as const,
-      updatedAt: new Date().toISOString()
-    };
-    setActiveOrder(updatedOrder);
-
-    const readyEvent = createOrderEvent(updatedOrder.id, "ready_to_ship", "ย้ายออเดอร์เข้าสู่คิวเตรียมพร้อมจัดส่งสินค้าสำเร็จ");
-    setActiveEvents((prev) => [readyEvent, ...prev]);
     addSimulatedEvent(readyEvent);
 
     upsertSimulatedOrder(updatedOrder);
@@ -600,7 +588,7 @@ export default function SimulatorPage() {
                 <div className="space-y-5">
                   {/* Address Collection */}
                   <div className="space-y-3">
-                    <label className="text-xs text-slate-400 block font-semibold">จำลองการกรอกที่อยู่ของลูกค้า (Collect Address)</label>
+                    <label className="text-xs text-slate-400 block font-semibold">จำลองการกรอกที่อยู่ของลูกค้า (บันทึกที่อยู่ → ระบบย้ายเข้าคิวพร้อมส่งอัตโนมัติ)</label>
                     <textarea
                       value={addressInput}
                       onChange={(e) => setAddressInput(e.target.value)}
@@ -608,7 +596,7 @@ export default function SimulatorPage() {
                       className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white h-20 focus:outline-none focus:border-emerald-500"
                     />
                     
-                    {activeOrder.status !== "ready_to_ship" && activeOrder.status !== "shipped" && (
+                    {activeOrder.status !== "ready_to_ship" && activeOrder.status !== "shipped" ? (
                       <div>
                         <button
                           onClick={handleSubmitAddress}
@@ -616,30 +604,21 @@ export default function SimulatorPage() {
                         >
                           บันทึกที่อยู่ลูกค้า (Collect Address)
                         </button>
+                        <p className="text-[10px] text-slate-500 mt-1.5">
+                          เมื่อระบบตรวจชำระเงินผ่านและได้รับที่อยู่แล้ว ออเดอร์จะถูกย้ายเข้าคิวพร้อมส่งโดยอัตโนมัติ
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-emerald-950/20 border border-emerald-900/40 rounded-lg text-xs text-emerald-300 font-semibold">
+                        ✓ ระบบได้บันทึกที่อยู่และส่งออเดอร์เข้าคิว "พร้อมส่ง" (Ready to Ship) อัตโนมัติเรียบร้อยแล้ว
                       </div>
                     )}
                   </div>
 
-                  {/* Move to ready to ship step */}
-                  {activeOrder.shippingAddress && activeOrder.status === "paid_waiting_address" && (
-                    <div className="space-y-2 border-t border-slate-850 pt-4">
-                      <label className="text-xs text-slate-400 block font-semibold">ขั้นตอนต่อไป: ดำเนินงานจัดเตรียมจัดส่งสินค้า</label>
-                      <button
-                        onClick={handleMoveToReadyToShip}
-                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition"
-                      >
-                        ย้ายเข้าคิวพร้อมส่ง
-                      </button>
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        * สถานะ "พร้อมส่ง" (Ready to Ship) = ได้รับยอดชำระแล้ว + บันทึกที่อยู่ลูกค้าแล้ว + รอดำเนินการจัดส่งสินค้าจากผู้ขาย
-                      </p>
-                    </div>
-                  )}
-
                   {/* Tracking input */}
                   {(activeOrder.status === "ready_to_ship" || activeOrder.status === "shipped") && (
                     <div className="space-y-3 border-t border-slate-850 pt-4">
-                      <label className="text-xs text-slate-400 block font-semibold">จำลองการออกเลขพัสดุ (Add Tracking)</label>
+                      <label className="text-xs text-slate-400 block font-semibold">จำลองการออกเลขพัสดุ (เพิ่มเลขพัสดุ → เปลี่ยนเป็นส่งแล้ว)</label>
                       <div className="flex gap-2">
                         <input
                           type="text"
