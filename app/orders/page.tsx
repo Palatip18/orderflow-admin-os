@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { mockOrders, mockCustomers, mockOrderItems, mockOrderEvents, mockProducts, mockVariants } from "@/lib/mockData";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, CHANNEL_LABELS } from "@/lib/statusLabels";
 import { Order, OrderStatus, OrderItem, IncomingMessage, OrderEvent } from "@/types/orderflow";
@@ -18,11 +18,19 @@ export default function OrdersPage() {
   const [serverEvents, setServerEvents] = useState<OrderEvent[]>([]);
   const [serverMessages, setServerMessages] = useState<IncomingMessage[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const selectedOrderIdRef = useRef<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [incomingMessages, setIncomingMessages] = useState<IncomingMessage[]>([]);
   const [events, setEvents] = useState<OrderEvent[]>([]);
 
-  const fetchServerState = async () => {
+  // Keep a ref in sync with the state so the polling closure always reads the
+  // latest selection without needing selectedOrderId as a dependency.
+  const handleSelectOrder = useCallback((id: string | null) => {
+    selectedOrderIdRef.current = id;
+    setSelectedOrderId(id);
+  }, []);
+
+  const fetchServerState = useCallback(async () => {
     try {
       const res = await fetch("/api/simulation/server-state");
       if (res.ok) {
@@ -63,14 +71,17 @@ export default function OrdersPage() {
         merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setOrders(merged);
 
-        if (!selectedOrderId && merged.length > 0) {
-          setSelectedOrderId(merged[0].id);
+        // Auto-select the first order only when no selection has been made yet.
+        // Read from the ref so the closure always sees the current value, not the
+        // stale capture from the initial render.
+        if (!selectedOrderIdRef.current && merged.length > 0) {
+          handleSelectOrder(merged[0].id);
         }
       }
     } catch (err) {
       console.error("Failed to fetch server state in orders page:", err);
     }
-  };
+  }, [handleSelectOrder]);
 
   useEffect(() => {
     fetchServerState();
@@ -212,7 +223,7 @@ export default function OrdersPage() {
                   return (
                     <tr
                       key={order.id}
-                      onClick={() => setSelectedOrderId(order.id)}
+                      onClick={() => handleSelectOrder(order.id)}
                       className={`hover:bg-slate-900/50 cursor-pointer transition ${
                         isSelected ? "bg-slate-900/70" : ""
                       }`}
