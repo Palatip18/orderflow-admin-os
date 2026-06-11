@@ -102,7 +102,7 @@ export const mockProducts: Product[] = [
   {
     id: "prod_001",
     name: "Classic Elephant Pants (กางเกงช้างรุ่นคลาสสิก)",
-    sku: "ELE-001",
+    sku: "A001",
     price: 199,
     availableStock: 120,
     reservedStock: 15,
@@ -115,7 +115,7 @@ export const mockProducts: Product[] = [
   {
     id: "prod_002",
     name: "Premium Thai Silk Dress (เดรสผ้าไหมไทยพรีเมียม)",
-    sku: "SLK-DRESS",
+    sku: "B002",
     price: 1290,
     availableStock: 8, // Low Stock Example
     reservedStock: 2,
@@ -128,7 +128,7 @@ export const mockProducts: Product[] = [
   {
     id: "prod_003",
     name: "Handwoven Boho Tote Bag (กระเป๋าสานโบโฮทำมือ)",
-    sku: "BAG-BOHO",
+    sku: "C003",
     price: 350,
     availableStock: 40,
     reservedStock: 0,
@@ -142,14 +142,14 @@ export const mockProducts: Product[] = [
 
 export const mockVariants: ProductVariant[] = [
   // Elephant Pants Variants
-  { id: "var_ele_black", productId: "prod_001", name: "Black / Free Size", sku: "ELE-001-BLK", price: 199, availableStock: 60, reservedStock: 10, soldStock: 25, createdAt: "2026-01-20T10:00:00Z" },
-  { id: "var_ele_navy", productId: "prod_001", name: "Navy / Free Size", sku: "ELE-001-NVY", price: 199, availableStock: 60, reservedStock: 5, soldStock: 20, createdAt: "2026-01-20T10:00:00Z" },
+  { id: "var_ele_black", productId: "prod_001", name: "Black / Free Size", sku: "A001-BLK", price: 199, availableStock: 60, reservedStock: 10, soldStock: 25, createdAt: "2026-01-20T10:00:00Z" },
+  { id: "var_ele_navy", productId: "prod_001", name: "Navy / Free Size", sku: "A001-NVY", price: 199, availableStock: 60, reservedStock: 5, soldStock: 20, createdAt: "2026-01-20T10:00:00Z" },
 
   // Thai Silk Dress Variants
-  { id: "var_slk_pink_m", productId: "prod_002", name: "Rose Pink / M", sku: "SLK-DRS-PNK-M", price: 1290, availableStock: 3, reservedStock: 1, soldStock: 5, createdAt: "2026-02-15T11:00:00Z" },
-  { id: "var_slk_pink_l", productId: "prod_002", name: "Rose Pink / L", sku: "SLK-DRS-PNK-L", price: 1290, availableStock: 2, reservedStock: 0, soldStock: 4, createdAt: "2026-02-15T11:00:00Z" },
-  { id: "var_slk_gold_m", productId: "prod_002", name: "Thai Gold / M", sku: "SLK-DRS-GLD-M", price: 1290, availableStock: 2, reservedStock: 1, soldStock: 2, createdAt: "2026-02-15T11:00:00Z" },
-  { id: "var_slk_gold_l", productId: "prod_002", name: "Thai Gold / L", sku: "SLK-DRS-GLD-L", price: 1290, availableStock: 1, reservedStock: 0, soldStock: 1, createdAt: "2026-02-15T11:00:00Z" },
+  { id: "var_slk_pink_m", productId: "prod_002", name: "Rose Pink / M", sku: "B002-PNK-M", price: 1290, availableStock: 3, reservedStock: 1, soldStock: 5, createdAt: "2026-02-15T11:00:00Z" },
+  { id: "var_slk_pink_l", productId: "prod_002", name: "Rose Pink / L", sku: "B002-PNK-L", price: 1290, availableStock: 2, reservedStock: 0, soldStock: 4, createdAt: "2026-02-15T11:00:00Z" },
+  { id: "var_slk_gold_m", productId: "prod_002", name: "Thai Gold / M", sku: "B002-GLD-M", price: 1290, availableStock: 2, reservedStock: 1, soldStock: 2, createdAt: "2026-02-15T11:00:00Z" },
+  { id: "var_slk_gold_l", productId: "prod_002", name: "Thai Gold / L", sku: "B002-GLD-L", price: 1290, availableStock: 1, reservedStock: 0, soldStock: 1, createdAt: "2026-02-15T11:00:00Z" },
 ];
 
 // 5. Incoming Messages (Unified Inbox)
@@ -168,7 +168,7 @@ export const mockMessages: IncomingMessage[] = [
       messageId: "msg_001",
       detectedIntent: "product_inquiry",
       confidenceScore: 0.95,
-      parsedPayload: { productCode: "ELE-001" },
+      parsedPayload: { productCode: "A001" },
     },
   },
   {
@@ -178,7 +178,7 @@ export const mockMessages: IncomingMessage[] = [
     externalSenderId: "fb_user_8829103984",
     senderName: "Nong Pim",
     rawContent: "สั่งเดรสผ้าไหม สีทอง ไซส์ M 1 ชุดค่ะ โอนแล้วนะคะ สลิปด้านล่างเลยค่ะ",
-    mediaUrl: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?w=300", // Simulate Slip
+    mediaUrl: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?w=300",
     status: "processed",
     timestamp: "2026-06-11T10:30:00Z",
     intent: {
@@ -195,7 +195,7 @@ export const mockMessages: IncomingMessage[] = [
     externalMessageId: "fb_live_cmt_441",
     externalSenderId: "fb_live_user_992019",
     senderName: "Siriporn Srisuk",
-    rawContent: "ELE-001-BLK 1",
+    rawContent: "A001-BLK 1",
     status: "processed",
     timestamp: "2026-06-11T11:01:00Z",
     intent: {
@@ -203,7 +203,7 @@ export const mockMessages: IncomingMessage[] = [
       messageId: "msg_003",
       detectedIntent: "order",
       confidenceScore: 0.99,
-      parsedPayload: { productCode: "ELE-001", color: "Black", quantity: 1 },
+      parsedPayload: { productCode: "A001", color: "Black", quantity: 1 },
     },
   },
   {
@@ -229,7 +229,7 @@ export const mockMessages: IncomingMessage[] = [
     externalMessageId: "tt_live_cmt_7719",
     externalSenderId: "tt_kitti_12",
     senderName: "Kitti K.",
-    rawContent: "รหัสกระเป๋า BAG-BOHO ยังมีของไหมครับ",
+    rawContent: "รหัสกระเป๋า C003 ยังมีของไหมครับ",
     status: "pending",
     timestamp: "2026-06-11T11:38:00Z",
     intent: {
@@ -237,7 +237,7 @@ export const mockMessages: IncomingMessage[] = [
       messageId: "msg_005",
       detectedIntent: "product_inquiry",
       confidenceScore: 0.91,
-      parsedPayload: { productCode: "BAG-BOHO" },
+      parsedPayload: { productCode: "C003" },
     },
   },
 ];
@@ -253,7 +253,7 @@ export const mockOrders: Order[] = [
     totalAmount: 199,
     paidAmount: 0,
     outstandingAmount: 199,
-    expiresAt: "2026-06-11T12:45:00Z", // 1 hr hold
+    expiresAt: "2026-06-11T12:45:00Z",
     createdAt: "2026-06-11T10:15:00Z",
     updatedAt: "2026-06-11T10:16:00Z",
   },
@@ -288,7 +288,7 @@ export const mockOrders: Order[] = [
     customerId: "cust_004",
     channelType: "instagram_dm",
     status: "shipped",
-    totalAmount: 1489, // Silk dress + elephant pants
+    totalAmount: 1489,
     paidAmount: 1489,
     outstandingAmount: 0,
     shippingAddress: "88 Charoen Krung Road, Bang Kho Laem, Bangkok 10120",
@@ -303,7 +303,7 @@ export const mockOrders: Order[] = [
     channelType: "tiktok_live",
     status: "issue",
     totalAmount: 199,
-    paidAmount: 180, // Paid 180 instead of 199
+    paidAmount: 180,
     outstandingAmount: 19,
     createdAt: "2026-06-11T10:45:00Z",
     updatedAt: "2026-06-11T10:50:00Z",

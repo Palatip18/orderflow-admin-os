@@ -1,14 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { mockOrders, mockCustomers, mockOrderItems, mockOrderEvents } from "@/lib/mockData";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, CHANNEL_LABELS } from "@/lib/statusLabels";
 import { Order, OrderStatus } from "@/types/orderflow";
+import { getSimulatedOrders, updateSimulatedOrder } from "@/lib/localOrderState";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(mockOrders[0]?.id || null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const simOrders = getSimulatedOrders();
+    // Merge: simulated orders first, then mock orders that aren't already simulated
+    const merged = [...simOrders, ...mockOrders.filter((mo) => !simOrders.some((so) => so.id === mo.id))];
+    setOrders(merged);
+    if (merged.length > 0) {
+      setSelectedOrderId(merged[0].id);
+    }
+  }, []);
 
   const formatTHB = (amount: number) => {
     return new Intl.NumberFormat("th-TH", {
@@ -33,15 +44,21 @@ export default function OrdersPage() {
     ? orders
     : orders.filter((o) => o.status === statusFilter);
 
-  // Simple handler to advance manual workflow status for Sprint 0A interactive demo
-  const updateStatus = (id: string, newStatus: any) => {
+  // Simple handler to advance manual workflow status for Sprint 0A/0B interactive demo
+  const updateStatus = (id: string, newStatus: OrderStatus) => {
     const updated = orders.map((o) => {
       if (o.id === id) {
-        return {
+        const updatedOrder = {
           ...o,
           status: newStatus,
           updatedAt: new Date().toISOString(),
         };
+
+        // If it's a simulated order, update in localStorage
+        if (!mockOrders.some((mo) => mo.id === id)) {
+          updateSimulatedOrder(updatedOrder);
+        }
+        return updatedOrder;
       }
       return o;
     });
@@ -178,7 +195,7 @@ export default function OrdersPage() {
                     <div key={item.id} className="flex justify-between items-center text-xs">
                       <div>
                         <p className="font-semibold text-slate-200">Classic Elephant Pants</p>
-                        <p className="text-[9px] text-slate-500">SKU: {item.productId === "prod_001" ? "ELE-001-BLK" : "SLK-DRS-GLD-M"}</p>
+                        <p className="text-[9px] text-slate-500">SKU: {item.productId === "prod_001" ? "A001-BLK" : "B002-GLD-M"}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-slate-200">{formatTHB(item.totalAmount)}</p>
@@ -201,10 +218,13 @@ export default function OrdersPage() {
                 </div>
               )}
 
-              {/* Actions Controls (Sprint 0A Manual Simulation) */}
+              {/* Actions Controls (Sprint 0A/0B Manual Simulation) */}
               <div className="space-y-2 border-t border-slate-850 pt-4">
-                <h3 className="text-[11px] text-slate-450 font-bold uppercase tracking-wider text-slate-400">Simulated Status Controls (Sprint 0A Demo Only)</h3>
-                <div className="flex flex-wrap gap-2">
+                <h3 className="text-[11px] text-slate-450 font-bold uppercase tracking-wider text-slate-400">Simulated Status Controls (Sprint 0A/0B Demo Only)</h3>
+                <p className="text-[10px] text-slate-500 leading-snug">
+                  These controls simulate future automation events. No real payment, bank, channel, or logistics API is connected.
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
                   {selectedOrder.status === "reserved_waiting_payment" && (
                     <button
                       onClick={() => updateStatus(selectedOrder.id, "paid_waiting_address")}

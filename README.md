@@ -51,7 +51,21 @@ This system demonstrates a decoupled, state-driven portfolio dashboard UI, simul
 
 ---
 
-## 5. How to Run Locally
+## 5. Sprint 0B — Core Order Lifecycle Simulator
+
+* **Interactive Order Lifecycle Demo**: Navigate to `/simulator` to play through a step-by-step order lifecycle sequence.
+* **Simulated Incoming Order**: Choose preset customer messages (e.g. "CF A001 ขาว S") or write custom inputs.
+* **Mock Stock Check**: Matches codes against mock product database SKUs (`A001`, `B002`, `C003`).
+* **Mock Variant Confirmation**: Prompts and simulates customer color/size options specifications.
+* **Mock Payment Verification**: Simulate SlipOK banking OCR scanning with multiple options (Valid, Mismatch, Duplicate).
+* **Mock Address Collection**: Collects shipping blocks without bypassing payment requirements.
+* **Ready-to-Ship Queue**: Automatically transitions orders to logistics queues once payment and address inputs are validated.
+* **Mock Tracking Capture**: Dispatches orders to couriers with mock tracking codes.
+* **State Synchronization**: Live dashboard metrics, orders queue, and notification centers update immediately from simulated localStorage state.
+
+---
+
+## 6. How to Run Locally
 
 ### Prerequisites
 Make sure you have [Node.js](https://nodejs.org/) installed (LTS version recommended).
@@ -71,13 +85,16 @@ Navigate to [http://localhost:3000](http://localhost:3000) on your local browser
 
 ---
 
-## 6. Project Directory Layout
+## 7. Project Directory Layout
 
 * `types/orderflow.ts` - Shared domain models and TypeScript interfaces.
 * `lib/mockData.ts` - Fashion catalog and customer message lists.
 * `lib/dashboardMetrics.ts` - Logic aggregating sales amounts and order status numbers.
 * `lib/orderStatusRules.ts` - Order payment validations and state transition loops.
 * `lib/statusLabels.ts` - Styling maps for UI badges.
+* `lib/localOrderState.ts` - localStorage accessors for simulator syncs.
+* `lib/orderLifecycleSimulator.ts` - Parser rules and lifecycle state triggers.
 * `docs/PROJECT_LOCK.md` - Core project boundaries and personas.
 * `docs/database/schema.sql` - PostgreSQL database structure script.
 * `docs/database/sample_queries.sql` - Standard business intelligence reporting scripts.
+

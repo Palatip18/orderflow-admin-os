@@ -1,15 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
-import { mockOrders, mockNotifications, mockProducts } from "@/lib/mockData";
+import React, { useState, useEffect } from "react";
+import { mockOrders, mockNotifications, mockProducts, mockOrderEvents } from "@/lib/mockData";
 import { calculateDashboardMetrics } from "@/lib/dashboardMetrics";
 import { ORDER_STATUS_LABELS, CHANNEL_LABELS } from "@/lib/statusLabels";
+import { getSimulatedOrders, getSimulatedEvents } from "@/lib/localOrderState";
+import { Order, OrderEvent } from "@/types/orderflow";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const [orders] = useState(mockOrders);
+  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [events, setEvents] = useState<OrderEvent[]>(mockOrderEvents);
   const [notifications] = useState(mockNotifications);
   const [products] = useState(mockProducts);
+
+  useEffect(() => {
+    const simOrders = getSimulatedOrders();
+    const mergedOrders = [...simOrders, ...mockOrders.filter((mo) => !simOrders.some((so) => so.id === mo.id))];
+    setOrders(mergedOrders);
+
+    const simEvents = getSimulatedEvents();
+    const mergedEvents = [...simEvents, ...mockOrderEvents.filter((me) => !simEvents.some((se) => se.id === me.id))];
+    setEvents(mergedEvents);
+  }, []);
 
   const metrics = calculateDashboardMetrics(orders);
 
@@ -52,8 +65,8 @@ export default function DashboardPage() {
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Collected / Paid</p>
           <p className="text-2xl md:text-3xl font-extrabold text-white">{formatTHB(metrics.paidAmount)}</p>
-          <div className="flex justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
-            <span>Progress</span>
+          <div className="flex justify-between text-[11px] text-slate-450 pt-2 border-t border-slate-800">
+            <span className="text-slate-400">Progress</span>
             <span className="font-semibold text-emerald-400">
               {((metrics.paidAmount / (metrics.totalSalesAmount || 1)) * 100).toFixed(0)}%
             </span>
@@ -117,7 +130,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="divide-y divide-slate-800">
-            {actionItems.map((order) => {
+            {actionItems.slice(0, 5).map((order) => {
               const statusInfo = ORDER_STATUS_LABELS[order.status];
               const channelInfo = CHANNEL_LABELS[order.channelType];
               return (
@@ -148,35 +161,24 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Side: Quick Alerts & Channel Status */}
+        {/* Right Side: Quick Alerts & Simulator Logs */}
         <div className="space-y-6">
           {/* Active Notifications */}
           <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h2 className="text-md font-bold text-white">System Alerts</h2>
+              <h2 className="text-md font-bold text-white">Simulation Log Events</h2>
               <Link href="/notifications" className="text-xs text-emerald-400 hover:underline">
-                View All
+                View Alerts
               </Link>
             </div>
-            <div className="space-y-3">
-              {notifications.slice(0, 3).map((not) => (
-                <div
-                  key={not.id}
-                  className={`p-3 rounded-lg border text-xs space-y-1 ${
-                    not.alertLevel === "critical"
-                      ? "bg-rose-950/20 border-rose-900/50 text-rose-200"
-                      : not.alertLevel === "warning"
-                      ? "bg-amber-950/20 border-amber-900/50 text-amber-200"
-                      : "bg-slate-900 border-slate-800 text-slate-300"
-                  }`}
-                >
-                  <div className="font-bold flex items-center justify-between">
-                    <span className="uppercase">{not.alertLevel} alert</span>
-                    <span className="text-[9px] text-slate-500 font-normal">
-                      {new Date(not.createdAt).toLocaleTimeString()}
-                    </span>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
+              {events.slice(0, 5).map((evt) => (
+                <div key={evt.id} className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">{evt.type}</span>
+                    <span className="text-[9px] text-slate-500">{new Date(evt.createdAt).toLocaleTimeString()}</span>
                   </div>
-                  <p className="leading-relaxed">{not.message}</p>
+                  <p className="text-slate-350 leading-snug">{evt.description}</p>
                 </div>
               ))}
             </div>

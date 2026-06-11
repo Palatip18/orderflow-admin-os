@@ -1,12 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { mockNotifications } from "@/lib/mockData";
 import { MerchantNotificationMode } from "@/types/orderflow";
+import { getSimulatedNotifications } from "@/lib/localOrderState";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState(mockNotifications);
   const [mode, setMode] = useState<MerchantNotificationMode>("all");
+
+  useEffect(() => {
+    const simNotifs = getSimulatedNotifications();
+    const merged = [...simNotifs, ...mockNotifications.filter((mn) => !simNotifs.some((sn) => sn.id === mn.id))];
+    setNotifications(merged);
+  }, []);
 
   const alertModes: { value: MerchantNotificationMode; title: string; desc: string }[] = [
     { value: "all", title: "All Alerts / เตือนทุกรายการ", desc: "Receive alerts for stock updates, payment intakes, new orders, and failures." },
@@ -21,7 +28,6 @@ export default function NotificationsPage() {
     if (mode === "important_only") {
       return n.alertLevel === "critical" || n.alertLevel === "warning";
     }
-    // "all" and "live_sale_mode" show everything in Sprint 0A mock view
     return true;
   });
 
@@ -123,7 +129,7 @@ export default function NotificationsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 <p className="font-semibold text-slate-400">No alerts matching settings</p>
-                <p className="text-[11px] text-slate-600 mt-1">Configure active level or check filters.</p>
+                <p className="text-[11px] text-slate-650 mt-1">Configure active level or check filters.</p>
               </div>
             )}
           </div>

@@ -202,7 +202,20 @@ export interface StockMovement {
 export interface OrderEvent {
   id: string;
   orderId: string;
-  type: "status_change" | "payment_attempt" | "shipment_update" | "manual_override";
+  type:
+    | "status_change"
+    | "payment_attempt"
+    | "shipment_update"
+    | "manual_override"
+    | "order_detected"
+    | "variant_required"
+    | "order_confirmed"
+    | "stock_reserved"
+    | "payment_verified_mock"
+    | "address_received"
+    | "ready_to_ship"
+    | "tracking_added"
+    | "human_review_required";
   description: string;
   actor: "system" | "admin" | "customer";
   createdAt: string;
