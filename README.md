@@ -96,7 +96,31 @@ Navigate to [http://localhost:3000](http://localhost:3000) on your local browser
 * `lib/statusLabels.ts` - Styling maps for UI badges.
 * `lib/localOrderState.ts` - localStorage accessors for simulator syncs.
 * `lib/orderLifecycleSimulator.ts` - Parser rules and lifecycle state triggers.
+* `lib/lineSignature.ts` - LINE signature validation helper.
+* `lib/lineClient.ts` - LINE Messaging reply client API wrapper.
+* `lib/lineMessageMapper.ts` - Mapping logic from text input to simulated status actions and replies.
+* `lib/serverSimulationStore.ts` - Server-side in-memory singleton stores.
+* `app/api/line/webhook/route.ts` - Real-time secure webhook listener.
+* `app/api/simulation/server-state/route.ts` - Simulator server sync endpoint.
+* `app/api/settings/config-status/route.ts` - Config status reporter endpoint.
 * `docs/PROJECT_LOCK.md` - Core project boundaries and personas.
 * `docs/database/schema.sql` - PostgreSQL database structure script.
 * `docs/database/sample_queries.sql` - Standard business intelligence reporting scripts.
+* `docs/SPRINT_1A_LINE_ALPHA_PLAN.md` - Sprint 1A architecture design document.
+* `docs/SPRINT_1A_LINE_ALPHA_SETUP.md` - Setup and testing procedures for the LINE Official Account.
+* `docs/SPRINT_1A_COMPLETION_REPORT.md` - Completion checklist and logic overview.
+
+---
+
+## 8. Sprint 1A — LINE Reply-only Alpha Integration
+
+This release bridges real chat channels with OrderFlow's core simulator logic.
+* **Real LINE Webhook Alpha**: Integrates a real LINE Messaging webhook receiver at `/api/line/webhook`.
+* **Strict Reply-only Operations**: Responds exclusively via `replyToken`. No push, broadcast, multicast, or narrowcast API implementations are used, ensuring zero messaging costs.
+* **Secure Signature Verification**: Employs HMAC-SHA256 signature verification over the raw text body using the channel secret. Parses payload objects only after validation checks succeed.
+* **No Database Required**: Webhook events persist in a server-side in-memory cache singleton (`serverSimulationStore.ts`). 
+* **In-Memory Alpha State Warning**: State is temporary. Rebuilding or restarting Next.js server instances will clear all server-generated messages, orders, and events. Prominent warnings are displayed in the WebApp console views.
+* **Merged UI Integration**: Unified views (`/inbox`, `/orders`, `/dashboard`, and `/notifications`) seamlessly fetch and merge real LINE webhook items with local simulator data, visually categorizing sources as `จาก LINE Webhook Alpha` or `จำลองจาก Simulator`.
+* **No Real Payments or SaaS Claims**: Payment validation remains a simulated event. No Stripe, SlipOK, user auth, or billing subscriptions are active.
+
 

@@ -2,17 +2,65 @@
 
 import React, { useState, useEffect } from "react";
 import { mockNotifications } from "@/lib/mockData";
-import { MerchantNotificationMode } from "@/types/orderflow";
+import { MerchantNotification, MerchantNotificationMode } from "@/types/orderflow";
 import { getSimulatedNotifications } from "@/lib/localOrderState";
 
+interface MergedNotification extends MerchantNotification {
+  dataSource?: "line_alpha" | "simulator" | "mock";
+}
+
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<MergedNotification[]>([]);
+  const [serverNotifications, setServerNotifications] = useState<MergedNotification[]>([]);
   const [mode, setMode] = useState<MerchantNotificationMode>("all");
 
+  const fetchServerState = async () => {
+    try {
+      const res = await fetch("/api/simulation/server-state");
+      if (res.ok) {
+        const data = await res.json();
+        const lineNotifs: MergedNotification[] = (data.notifications || []).map((n: any) => ({
+          ...n,
+          dataSource: "line_alpha" as const
+        }));
+        setServerNotifications(lineNotifs);
+
+        const simNotifs: MergedNotification[] = getSimulatedNotifications().map((n) => ({
+          ...n,
+          dataSource: "simulator" as const
+        }));
+
+        const mockNotifs: MergedNotification[] = mockNotifications.map((n) => ({
+          ...n,
+          dataSource: "mock" as const
+        }));
+
+        // Merge: Server, then simulator, then mock
+        const merged: MergedNotification[] = [...lineNotifs];
+        simNotifs.forEach((sn) => {
+          if (!merged.some((n) => n.id === sn.id)) {
+            merged.push(sn);
+          }
+        });
+        mockNotifs.forEach((mn) => {
+          if (!merged.some((n) => n.id === mn.id)) {
+            merged.push(mn);
+          }
+        });
+
+        // Sort by date descending
+        merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setNotifications(merged);
+      }
+    } catch (err) {
+      console.error("Failed to fetch server state in notifications:", err);
+    }
+  };
+
   useEffect(() => {
-    const simNotifs = getSimulatedNotifications();
-    const merged = [...simNotifs, ...mockNotifications.filter((mn) => !simNotifs.some((sn) => sn.id === mn.id))];
-    setNotifications(merged);
+    fetchServerState();
+    const interval = setInterval(fetchServerState, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const alertModes: { value: MerchantNotificationMode; title: string; desc: string }[] = [
@@ -40,6 +88,14 @@ export default function NotificationsPage() {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">ศูนย์แจ้งเตือนร้านค้า (Notification Center)</h1>
         <p className="text-sm text-slate-400">ตั้งค่าระดับการแจ้งเตือนและการเตือนเหตุการณ์สำคัญในระบบ</p>
+      </div>
+
+      {/* Warning banner for in-memory server state */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center gap-2">
+          <span className="text-amber-500 font-bold">⚠️ หมายเหตุ (Alpha):</span>
+          <span>In-memory server state is for alpha testing only. It may reset when the server restarts or refreshes. (ข้อมูลแจ้งเตือนเซิร์ฟเวอร์จะรีเซ็ตเมื่อรีสตาร์ท)</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -117,13 +173,18 @@ export default function NotificationsPage() {
                         }`}>
                           {not.alertLevel === "critical" ? "วิกฤต (Critical)" : not.alertLevel === "warning" ? "แจ้งเตือน (Warning)" : "ทั่วไป (Info)"}
                         </span>
-                        {!mockNotifications.some((mn) => mn.id === not.id) && (
+                        {not.dataSource === "line_alpha" && (
+                          <span className="px-1.5 py-0.2 text-[8px] font-bold bg-indigo-950/60 border border-indigo-500/20 text-indigo-400 rounded">
+                            จาก LINE Webhook Alpha
+                          </span>
+                        )}
+                        {not.dataSource === "simulator" && (
                           <span className="px-1.5 py-0.2 text-[8px] font-bold bg-emerald-950/60 border border-emerald-500/20 text-emerald-400 rounded">
-                            Simulator Event
+                            จำลองจาก Simulator
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] text-slate-500">{new Date(not.createdAt).toLocaleTimeString()}</span>
+                      <span className="text-[10px] text-slate-550 text-slate-500">{new Date(not.createdAt).toLocaleTimeString()}</span>
                     </div>
                     <p className="text-xs text-slate-200 leading-relaxed">{not.message}</p>
                   </div>
@@ -133,10 +194,10 @@ export default function NotificationsPage() {
             {filteredNotifications.length === 0 && (
               <div className="flex flex-col items-center justify-center text-center p-8 py-16 text-slate-500">
                 <svg className="w-10 h-10 text-slate-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 <p className="font-semibold text-slate-400">ไม่พบประวัติการแจ้งเตือนตามที่กำหนด</p>
-                <p className="text-[11px] text-slate-500 mt-1">ลองเปลี่ยนระดับการแจ้งเตือนหรือประมวลผลออเดอร์ใหม่เพิ่ม</p>
+                <p className="text-[11px] text-slate-550 text-slate-500 mt-1">ลองเปลี่ยนระดับการแจ้งเตือนหรือประมวลผลออเดอร์ใหม่เพิ่ม</p>
               </div>
             )}
           </div>

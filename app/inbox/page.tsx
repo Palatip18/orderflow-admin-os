@@ -3,25 +3,85 @@
 import React, { useState, useEffect } from "react";
 import { mockMessages, mockOrders } from "@/lib/mockData";
 import { CHANNEL_LABELS, INTENT_LABELS, ORDER_STATUS_LABELS } from "@/lib/statusLabels";
-import { IncomingMessage, Order } from "@/types/orderflow";
+import { IncomingMessage, Order, OrderItem } from "@/types/orderflow";
 import { getSimulatedIncomingMessages, getSimulatedOrders } from "@/lib/localOrderState";
 
+interface MergedMessage extends IncomingMessage {
+  dataSource?: "line_alpha" | "simulator" | "mock";
+}
+
 export default function UnifiedInboxPage() {
-  const [messages, setMessages] = useState<IncomingMessage[]>(mockMessages);
-  const [selectedMessage, setSelectedMessage] = useState<IncomingMessage | null>(null);
+  const [messages, setMessages] = useState<MergedMessage[]>([]);
+  const [selectedMessage, setSelectedMessage] = useState<MergedMessage | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [serverOrders, setServerOrders] = useState<Order[]>([]);
+
+  const fetchServerState = async () => {
+    try {
+      const res = await fetch("/api/simulation/server-state");
+      if (res.ok) {
+        const data = await res.json();
+        const serverMsgs: MergedMessage[] = (data.incomingMessages || []).map((m: any) => ({
+          ...m,
+          dataSource: "line_alpha" as const
+        }));
+        setServerOrders(data.orders || []);
+
+        const simMsgs: MergedMessage[] = getSimulatedIncomingMessages().map((m) => ({
+          ...m,
+          dataSource: "simulator" as const
+        }));
+
+        const mockMsgs: MergedMessage[] = mockMessages.map((m) => ({
+          ...m,
+          dataSource: "mock" as const
+        }));
+
+        // Merge: Server first, then local simulator, then mock messages
+        const merged: MergedMessage[] = [...serverMsgs];
+        simMsgs.forEach((sm) => {
+          if (!merged.some((m) => m.id === sm.id)) {
+            merged.push(sm);
+          }
+        });
+        mockMsgs.forEach((mm) => {
+          if (!merged.some((m) => m.id === mm.id)) {
+            merged.push(mm);
+          }
+        });
+
+        // Sort by timestamp descending
+        merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        setMessages(merged);
+
+        // Keep selected message reference updated with latest data
+        if (selectedMessage) {
+          const updatedSelected = merged.find((m) => m.id === selectedMessage.id);
+          if (updatedSelected) {
+            setSelectedMessage(updatedSelected);
+          }
+        } else if (merged.length > 0) {
+          setSelectedMessage(merged[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch server state:", err);
+    }
+  };
 
   useEffect(() => {
-    const simMsgs = getSimulatedIncomingMessages();
-    const merged = [...simMsgs, ...mockMessages.filter((msg) => !simMsgs.some((sm) => sm.id === msg.id))];
-    setMessages(merged);
-
+    // Initial fetch
+    fetchServerState();
+    
+    // Set up polling for live LINE webhook events
+    const interval = setInterval(fetchServerState, 3000);
+    
+    // Fetch local orders
     const simOrders = getSimulatedOrders();
     setOrders(simOrders);
 
-    if (merged.length > 0) {
-      setSelectedMessage(merged[0]);
-    }
+    return () => clearInterval(interval);
   }, []);
 
   const getStatusBadge = (status: IncomingMessage["status"]) => {
@@ -61,9 +121,19 @@ export default function UnifiedInboxPage() {
 
   return (
     <div className="space-y-6 h-full flex flex-col">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">กล่องข้อความรวมหลายช่องทาง (Unified Inbox)</h1>
-        <p className="text-sm text-slate-400">จำลองการสื่อสารกับลูกค้าจากหลากหลายช่องทางขายแบบเรียลไทม์</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">กล่องข้อความรวมหลายช่องทาง (Unified Inbox)</h1>
+          <p className="text-sm text-slate-400">จำลองการสื่อสารกับลูกค้าจากหลากหลายช่องทางขายแบบเรียลไทม์</p>
+        </div>
+      </div>
+
+      {/* Warning banner for in-memory server state */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center gap-2">
+          <span className="text-amber-500 font-bold">⚠️ หมายเหตุ (Alpha):</span>
+          <span>In-memory server state is for alpha testing only. It may reset when the server restarts. (สถานะเซิร์ฟเวอร์จะรีเซ็ตเมื่อรีสตาร์ท)</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-stretch min-h-[500px]">
@@ -76,10 +146,11 @@ export default function UnifiedInboxPage() {
             {messages.map((msg) => {
               const channel = CHANNEL_LABELS[msg.channelType];
               const isSelected = selectedMessage?.id === msg.id;
-              const isSimulated = !mockMessages.some((m) => m.id === msg.id);
 
               const linkedOrder = msg.orderId
-                ? (orders.find((o) => o.id === msg.orderId) || mockOrders.find((o) => o.id === msg.orderId))
+                ? (orders.find((o) => o.id === msg.orderId) || 
+                   serverOrders.find((o) => o.id === msg.orderId) ||
+                   mockOrders.find((o) => o.id === msg.orderId))
                 : null;
               const orderStatusInfo = linkedOrder ? ORDER_STATUS_LABELS[linkedOrder.status] : null;
 
@@ -96,19 +167,24 @@ export default function UnifiedInboxPage() {
                       <span className={`w-2 h-2 rounded-full ${channel.iconColor.replace("text-", "bg-")}`}></span>
                       <span className="text-xs font-semibold text-slate-400">{channel.label}</span>
                     </div>
-                    <span className="text-[10px] text-slate-500">{new Date(msg.timestamp).toLocaleTimeString()}</span>
+                    <span className="text-[10px] text-slate-550 text-slate-500">{new Date(msg.timestamp).toLocaleTimeString()}</span>
                   </div>
 
                   <div className="flex items-center justify-between gap-2">
                     <div className="font-bold text-sm text-slate-200">{msg.senderName}</div>
-                    {isSimulated && (
-                      <span className="px-2 py-0.5 text-[9px] font-bold text-emerald-450 bg-emerald-950/50 border border-emerald-500/20 text-emerald-450 rounded-full">
+                    {msg.dataSource === "line_alpha" && (
+                      <span className="px-2 py-0.5 text-[9px] font-bold bg-indigo-950/50 border border-indigo-500/20 text-indigo-400 rounded-full">
+                        จาก LINE Webhook Alpha
+                      </span>
+                    )}
+                    {msg.dataSource === "simulator" && (
+                      <span className="px-2 py-0.5 text-[9px] font-bold bg-emerald-950/50 border border-emerald-500/20 text-emerald-400 rounded-full">
                         จำลองจาก Simulator
                       </span>
                     )}
                   </div>
 
-                  <p className="text-xs text-slate-450 truncate w-full max-w-[240px] text-slate-400">
+                  <p className="text-xs truncate w-full max-w-[240px] text-slate-400">
                     {msg.rawContent}
                   </p>
 
@@ -149,8 +225,13 @@ export default function UnifiedInboxPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-bold text-white text-lg">{selectedMessage.senderName}</span>
                     <span className="text-xs text-slate-500 font-mono">ID: {selectedMessage.externalSenderId.slice(0, 10)}...</span>
-                    {!mockMessages.some((m) => m.id === selectedMessage.id) && (
-                      <span className="px-2.5 py-0.5 text-[10px] font-bold text-emerald-450 bg-emerald-950/50 border border-emerald-500/20 text-emerald-400 rounded-full">
+                    {selectedMessage.dataSource === "line_alpha" && (
+                      <span className="px-2.5 py-0.5 text-[10px] font-bold bg-indigo-950/55 border border-indigo-550 border-indigo-500/20 text-indigo-400 rounded-full">
+                        จาก LINE Webhook Alpha
+                      </span>
+                    )}
+                    {selectedMessage.dataSource === "simulator" && (
+                      <span className="px-2.5 py-0.5 text-[10px] font-bold bg-emerald-950/50 border border-emerald-500/20 text-emerald-450 rounded-full">
                         จำลองจาก Simulator
                       </span>
                     )}
@@ -231,7 +312,7 @@ export default function UnifiedInboxPage() {
                         <div className="grid grid-cols-2 gap-4 text-xs">
                           {Object.entries(selectedMessage.intent.parsedPayload).map(([key, value]) => (
                             <div key={key} className="bg-slate-900/80 p-3 rounded-lg border border-slate-800/60">
-                              <span className="text-[10px] text-slate-550 text-slate-500 uppercase font-mono">{key}</span>
+                              <span className="text-[10px] text-slate-500 uppercase font-mono">{key}</span>
                               <p className="font-bold text-slate-200 mt-1">{String(value)}</p>
                             </div>
                           ))}
@@ -255,7 +336,9 @@ export default function UnifiedInboxPage() {
                       <div>
                         <span className="text-slate-500 block text-right mb-1">สถานะออเดอร์</span>
                         {(() => {
-                          const linkedOrder = orders.find((o) => o.id === selectedMessage.orderId) || mockOrders.find((o) => o.id === selectedMessage.orderId);
+                          const linkedOrder = orders.find((o) => o.id === selectedMessage.orderId) ||
+                                             serverOrders.find((o) => o.id === selectedMessage.orderId) ||
+                                             mockOrders.find((o) => o.id === selectedMessage.orderId);
                           const orderStatusInfo = linkedOrder ? ORDER_STATUS_LABELS[linkedOrder.status] : null;
                           return orderStatusInfo ? (
                             <span className={`text-[10px] border px-2 py-0.5 rounded font-semibold ${orderStatusInfo.bgClass} ${orderStatusInfo.textClass} ${orderStatusInfo.borderClass}`}>

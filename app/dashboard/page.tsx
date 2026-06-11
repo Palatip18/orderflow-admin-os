@@ -8,25 +8,88 @@ import { getSimulatedOrders, getSimulatedEvents } from "@/lib/localOrderState";
 import { Order, OrderEvent } from "@/types/orderflow";
 import Link from "next/link";
 
+interface MergedOrder extends Order {
+  dataSource?: "line_alpha" | "simulator" | "mock";
+}
+
 export default function DashboardPage() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
-  const [events, setEvents] = useState<OrderEvent[]>(mockOrderEvents);
-  const [notifications] = useState(mockNotifications);
+  const [orders, setOrders] = useState<MergedOrder[]>([]);
+  const [events, setEvents] = useState<OrderEvent[]>([]);
   const [products] = useState(mockProducts);
 
-  useEffect(() => {
-    const simOrders = getSimulatedOrders();
-    const mergedOrders = [...simOrders, ...mockOrders.filter((mo) => !simOrders.some((so) => so.id === mo.id))];
-    setOrders(mergedOrders);
+  const fetchServerState = async () => {
+    try {
+      const res = await fetch("/api/simulation/server-state");
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Map server-state orders
+        const lineOrders: MergedOrder[] = (data.orders || []).map((o: any) => ({
+          ...o,
+          dataSource: "line_alpha" as const
+        }));
 
-    const simEvents = getSimulatedEvents();
-    const mergedEvents = [...simEvents, ...mockOrderEvents.filter((me) => !simEvents.some((se) => se.id === me.id))];
-    setEvents(mergedEvents);
+        // Map server-state events
+        const lineEvents: OrderEvent[] = data.events || [];
+
+        // Get local simulated orders
+        const simOrders: MergedOrder[] = getSimulatedOrders().map((o) => ({
+          ...o,
+          dataSource: "simulator" as const
+        }));
+
+        // Get mock orders
+        const mockOrds: MergedOrder[] = mockOrders.map((o) => ({
+          ...o,
+          dataSource: "mock" as const
+        }));
+
+        // Merge orders
+        const mergedOrders: MergedOrder[] = [...lineOrders];
+        simOrders.forEach((so) => {
+          if (!mergedOrders.some((o) => o.id === so.id)) {
+            mergedOrders.push(so);
+          }
+        });
+        mockOrds.forEach((mo) => {
+          if (!mergedOrders.some((o) => o.id === mo.id)) {
+            mergedOrders.push(mo);
+          }
+        });
+        setOrders(mergedOrders);
+
+        // Merge events
+        const simEvents = getSimulatedEvents();
+        const mergedEvents = [...lineEvents];
+        simEvents.forEach((se) => {
+          if (!mergedEvents.some((e) => e.id === se.id)) {
+            mergedEvents.push(se);
+          }
+        });
+        mockOrderEvents.forEach((me) => {
+          if (!mergedEvents.some((e) => e.id === me.id)) {
+            mergedEvents.push(me);
+          }
+        });
+
+        // Sort events by date descending
+        mergedEvents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setEvents(mergedEvents);
+      }
+    } catch (err) {
+      console.error("Failed to fetch server state in dashboard:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchServerState();
+    const interval = setInterval(fetchServerState, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const metrics = calculateDashboardMetrics(orders);
 
-  // Filter orders needing immediate attention (issue or waiting payment / waiting address)
+  // Filter orders needing immediate attention
   const actionItems = orders.filter((o) => o.status === "issue" || o.status === "paid_waiting_address");
 
   const formatTHB = (amount: number) => {
@@ -43,11 +106,19 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">แดชบอร์ดสดแบบจำลอง (Live Dashboard)</h1>
-          <p className="text-sm text-slate-400">ข้อมูลในหน้านี้คำนวณจาก mock data และ browser-local simulation state เท่านั้น (รวมข้อมูล mock และข้อมูลจำลองจาก Simulator ใน browser นี้)</p>
+          <p className="text-sm text-slate-400">ข้อมูลในหน้านี้คำนวณรวมจาก mock data, browser-local simulation state และ real-time LINE webhook events</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          โหมดสตรีมสด: ปิด (Live Mode: Off)
+          LINE Webhook Alpha: ออนไลน์
+        </div>
+      </div>
+
+      {/* Warning banner for in-memory server state */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center gap-2">
+          <span className="text-amber-500 font-bold">⚠️ หมายเหตุ (Alpha):</span>
+          <span>In-memory server state is for alpha testing only. It may reset when the server restarts. (ข้อมูลสตรีมเซิร์ฟเวอร์จะรีเซ็ตเมื่อรีสตาร์ท)</span>
         </div>
       </div>
 
@@ -65,7 +136,7 @@ export default function DashboardPage() {
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">ยอดรับชำระแล้ว (Paid Amount)</p>
           <p className="text-2xl md:text-3xl font-extrabold text-white">{formatTHB(metrics.paidAmount)}</p>
-          <div className="flex justify-between text-[11px] text-slate-450 pt-2 border-t border-slate-800">
+          <div className="flex justify-between text-[11px] pt-2 border-t border-slate-800">
             <span className="text-slate-400">สัดส่วนที่จ่ายแล้ว</span>
             <span className="font-semibold text-emerald-400">
               {((metrics.paidAmount / (metrics.totalSalesAmount || 1)) * 100).toFixed(0)}%
@@ -141,6 +212,16 @@ export default function DashboardPage() {
                       <span className={`text-[10px] px-2 py-0.5 rounded border ${statusInfo.bgClass} ${statusInfo.textClass} ${statusInfo.borderClass}`}>
                         {statusInfo.label}
                       </span>
+                      {order.dataSource === "line_alpha" && (
+                        <span className="px-2 py-0.5 text-[9px] font-bold bg-indigo-950 text-indigo-400 border border-indigo-900 rounded-full">
+                          จาก LINE Webhook Alpha
+                        </span>
+                      )}
+                      {order.dataSource === "simulator" && (
+                        <span className="px-2 py-0.5 text-[9px] font-bold bg-emerald-950 text-emerald-450 border border-emerald-900 rounded-full">
+                          จำลองจาก Simulator
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-400">
                       ช่องทาง: <span className="font-semibold">{channelInfo?.label}</span> | ยอดรวม: <span className="text-slate-200">{formatTHB(order.totalAmount)}</span>
@@ -172,7 +253,7 @@ export default function DashboardPage() {
               </Link>
             </div>
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
-              {events.slice(0, 5).map((evt) => (
+              {events.slice(0, 6).map((evt) => (
                 <div key={evt.id} className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs space-y-1">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">{evt.type}</span>
@@ -197,7 +278,7 @@ export default function DashboardPage() {
                       <p className="text-[10px] text-slate-500">SKU: {prod.sku}</p>
                     </div>
                     <div className="text-right">
-                      <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/50 font-bold">
+                      <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-450 text-rose-400 border border-rose-800/50 font-bold">
                         เหลืออีก {prod.availableStock} ชิ้น
                       </span>
                     </div>
