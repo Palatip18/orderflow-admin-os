@@ -1,4 +1,4 @@
-import { Order, OrderEvent, MerchantNotification } from "@/types/orderflow";
+import { Order, OrderEvent, MerchantNotification, OrderItem, StockMovement } from "@/types/orderflow";
 import { STORAGE_KEYS } from "./storageKeys";
 
 const isBrowser = typeof window !== "undefined";
@@ -37,6 +37,61 @@ export function updateSimulatedOrder(order: Order): void {
   saveSimulatedOrders(updated);
 }
 
+// --- Order Items Persistence ---
+export function getSimulatedOrderItems(): OrderItem[] {
+  if (!isBrowser) return [];
+  try {
+    const raw = localStorage.getItem("orderflow_simulated_items");
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Failed to load simulated items:", e);
+    return [];
+  }
+}
+
+export function saveSimulatedOrderItems(items: OrderItem[]): void {
+  if (!isBrowser) return;
+  try {
+    localStorage.setItem("orderflow_simulated_items", JSON.stringify(items));
+  } catch (e) {
+    console.error("Failed to save simulated items:", e);
+  }
+}
+
+export function addSimulatedOrderItem(item: OrderItem): void {
+  const current = getSimulatedOrderItems();
+  if (!current.some((i) => i.id === item.id)) {
+    saveSimulatedOrderItems([item, ...current]);
+  }
+}
+
+// --- Stock Movements Persistence ---
+export function getSimulatedStockMovements(): StockMovement[] {
+  if (!isBrowser) return [];
+  try {
+    const raw = localStorage.getItem("orderflow_simulated_stock");
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Failed to load simulated stock:", e);
+    return [];
+  }
+}
+
+export function saveSimulatedStockMovements(movements: StockMovement[]): void {
+  if (!isBrowser) return;
+  try {
+    localStorage.setItem("orderflow_simulated_stock", JSON.stringify(movements));
+  } catch (e) {
+    console.error("Failed to save simulated stock:", e);
+  }
+}
+
+export function addSimulatedStockMovement(movement: StockMovement): void {
+  const current = getSimulatedStockMovements();
+  saveSimulatedStockMovements([movement, ...current]);
+}
+
+// --- Events ---
 export function getSimulatedEvents(): OrderEvent[] {
   if (!isBrowser) return [];
   try {
@@ -62,6 +117,7 @@ export function addSimulatedEvent(event: OrderEvent): void {
   saveSimulatedEvents([event, ...current]);
 }
 
+// --- Notifications ---
 export function getSimulatedNotifications(): MerchantNotification[] {
   if (!isBrowser) return [];
   try {
@@ -87,10 +143,13 @@ export function addSimulatedNotification(notif: MerchantNotification): void {
   saveSimulatedNotifications([notif, ...current]);
 }
 
+// --- Reset ---
 export function resetSimulationState(): void {
   if (!isBrowser) return;
   try {
     localStorage.removeItem(STORAGE_KEYS.MOCK_ORDERS);
+    localStorage.removeItem("orderflow_simulated_items");
+    localStorage.removeItem("orderflow_simulated_stock");
     localStorage.removeItem("orderflow_simulated_events");
     localStorage.removeItem(STORAGE_KEYS.MOCK_NOTIFICATIONS);
   } catch (e) {

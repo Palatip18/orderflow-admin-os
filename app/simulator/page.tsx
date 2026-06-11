@@ -18,7 +18,9 @@ import {
   addSimulatedEvent,
   addSimulatedNotification,
   resetSimulationState,
-  getSimulatedOrders
+  getSimulatedOrders,
+  addSimulatedOrderItem,
+  addSimulatedStockMovement
 } from "@/lib/localOrderState";
 import { ChannelType, ParsedOrderIntent, Order, OrderItem, ProductVariant, OrderEvent, Product } from "@/types/orderflow";
 import { CHANNEL_LABELS } from "@/lib/statusLabels";
@@ -148,18 +150,21 @@ export default function SimulatorPage() {
     const reservedOrder = confirmAndReserveOrder(order, mockSettings);
     setActiveOrder(reservedOrder);
 
-    // Deduct mock stock logic
-    if (selectedProduct) {
-      if (selectedVariant) {
-        selectedVariant.availableStock -= item.quantity;
-        selectedVariant.reservedStock += item.quantity;
-      } else {
-        selectedProduct.availableStock -= item.quantity;
-        selectedProduct.reservedStock += item.quantity;
-      }
-    }
+    // Record simulated stock reservation movement
+    const reservationMovement = {
+      id: `stk_${Date.now()}`,
+      productId: selectedProduct.id,
+      variantId: selectedVariant?.id || undefined,
+      orderId: order.id,
+      type: "reserve" as const,
+      quantity: item.quantity,
+      note: "Simulated stock reservation",
+      createdAt: new Date().toISOString()
+    };
 
     // Add to LocalStorage
+    addSimulatedOrderItem(item);
+    addSimulatedStockMovement(reservationMovement);
     addSimulatedOrder(reservedOrder);
     addSimulatedEvent(draftEvent);
 
@@ -261,15 +266,19 @@ export default function SimulatorPage() {
     setActiveEvents((prev) => [completeEvent, ...prev]);
     addSimulatedEvent(completeEvent);
 
-    // Return reserved stock to sold stock
+    // Record simulated stock sale movement (reserve released to complete sale)
     if (selectedProduct) {
-      if (selectedVariant) {
-        selectedVariant.reservedStock -= activeItem?.quantity || 1;
-        selectedVariant.soldStock += activeItem?.quantity || 1;
-      } else {
-        selectedProduct.reservedStock -= activeItem?.quantity || 1;
-        selectedProduct.soldStock += activeItem?.quantity || 1;
-      }
+      const saleMovement = {
+        id: `stk_${Date.now()}`,
+        productId: selectedProduct.id,
+        variantId: selectedVariant?.id || undefined,
+        orderId: order.id,
+        type: "sale" as const,
+        quantity: activeItem?.quantity || 1,
+        note: "Simulated stock sale transition",
+        createdAt: new Date().toISOString()
+      };
+      addSimulatedStockMovement(saleMovement);
     }
 
     addSimulatedOrder(order);
@@ -434,6 +443,12 @@ export default function SimulatorPage() {
               >
                 Confirm Order & Reserve Stock / ล็อคสต๊อกจองสินค้า
               </button>
+
+              {selectedProduct?.hasVariants && !selectedVariant && (
+                <p className="text-xs text-amber-400 font-semibold text-center mt-2">
+                  ⚠️ Please simulate customer variant reply before confirming reservation.
+                </p>
+              )}
             </div>
           )}
 
@@ -502,6 +517,14 @@ export default function SimulatorPage() {
                       const overridden = { ...activeOrder, status: "paid_waiting_address" as const, paidAmount: activeOrder.totalAmount, outstandingAmount: 0 };
                       setActiveOrder(overridden);
                       addSimulatedOrder(overridden);
+
+                      const overrideEvent = createOrderEvent(
+                        activeOrder.id,
+                        "manual_override" as const,
+                        "Manual payment verification override executed by administrator. Status forced to paid_waiting_address. (Demo Mode only)"
+                      );
+                      setActiveEvents((prev) => [overrideEvent, ...prev]);
+                      addSimulatedEvent(overrideEvent);
                     }}
                     className="bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold px-3 py-1.5 rounded border border-slate-700 transition"
                   >

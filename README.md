@@ -12,7 +12,7 @@ This system demonstrates a decoupled, state-driven portfolio dashboard UI, simul
 
 > [!WARNING]
 > **Important Portfolio MVP & Wording Safety Notice**:
-> - **Simulated Dashboard**: All calculations, totals, and counts displayed on the dashboard are computed from static local mock data.
+> - **Simulated Dashboard**: All calculations, totals, and counts displayed on the dashboard are computed from local mock data and browser-local simulation state.
 > - **Mock Verification**: Payment and bank slip verification is completely mock/simulated. No real SlipOK or banking API connection exists.
 > - **Manual Demo Controls**: Order status shifts and verification loops are controlled manually via simulation buttons in the order details screen for Sprint 0A demo purposes.
 > - **No Active Integrations**: No real customer messages are processed, and no live connections or webhooks exist for LINE OA, Facebook Messenger, Facebook Live, TikTok Live, or Instagram.

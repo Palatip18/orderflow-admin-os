@@ -1,21 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { mockOrders, mockCustomers, mockOrderItems, mockOrderEvents } from "@/lib/mockData";
+import { mockOrders, mockCustomers, mockOrderItems, mockOrderEvents, mockProducts, mockVariants } from "@/lib/mockData";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, CHANNEL_LABELS } from "@/lib/statusLabels";
-import { Order, OrderStatus } from "@/types/orderflow";
-import { getSimulatedOrders, updateSimulatedOrder } from "@/lib/localOrderState";
+import { Order, OrderStatus, OrderItem } from "@/types/orderflow";
+import { getSimulatedOrders, updateSimulatedOrder, getSimulatedOrderItems } from "@/lib/localOrderState";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>(mockOrderItems);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(mockOrders[0]?.id || null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     const simOrders = getSimulatedOrders();
-    // Merge: simulated orders first, then mock orders that aren't already simulated
     const merged = [...simOrders, ...mockOrders.filter((mo) => !simOrders.some((so) => so.id === mo.id))];
     setOrders(merged);
+
+    const simItems = getSimulatedOrderItems();
+    const mergedItems = [...simItems, ...mockOrderItems.filter((mi) => !simItems.some((si) => si.id === mi.id))];
+    setOrderItems(mergedItems);
+
     if (merged.length > 0) {
       setSelectedOrderId(merged[0].id);
     }
@@ -34,7 +39,7 @@ export default function OrdersPage() {
     ? mockCustomers.find((c) => c.id === selectedOrder.customerId)
     : null;
   const selectedItems = selectedOrder
-    ? mockOrderItems.filter((item) => item.orderId === selectedOrder.id)
+    ? orderItems.filter((item) => item.orderId === selectedOrder.id)
     : [];
   const selectedEvents = selectedOrder
     ? mockOrderEvents.filter((evt) => evt.orderId === selectedOrder.id)
@@ -191,18 +196,24 @@ export default function OrdersPage() {
               <div className="space-y-2">
                 <h3 className="text-[11px] text-slate-450 font-bold uppercase tracking-wider text-slate-400">Order Items</h3>
                 <div className="bg-slate-900 border border-slate-850 rounded-lg p-3 space-y-2">
-                  {selectedItems.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center text-xs">
-                      <div>
-                        <p className="font-semibold text-slate-200">Classic Elephant Pants</p>
-                        <p className="text-[9px] text-slate-500">SKU: {item.productId === "prod_001" ? "A001-BLK" : "B002-GLD-M"}</p>
+                   {selectedItems.map((item) => {
+                    const product = mockProducts.find((p) => p.id === item.productId);
+                    const variant = mockVariants.find((v) => v.id === item.variantId);
+                    return (
+                      <div key={item.id} className="flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-semibold text-slate-200">{product?.name || "Unknown Product"}</p>
+                          <p className="text-[9px] text-slate-500">
+                            SKU: {variant ? variant.sku : product?.sku || "N/A"}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-slate-200">{formatTHB(item.totalAmount)}</p>
+                          <p className="text-[10px] text-slate-500">Qty: {item.quantity}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-slate-200">{formatTHB(item.totalAmount)}</p>
-                        <p className="text-[10px] text-slate-500">Qty: {item.quantity}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div className="border-t border-slate-800 pt-2 flex justify-between items-center text-xs font-bold">
                     <span className="text-slate-400">Total:</span>
                     <span className="text-emerald-400 text-sm">{formatTHB(selectedOrder.totalAmount)}</span>
