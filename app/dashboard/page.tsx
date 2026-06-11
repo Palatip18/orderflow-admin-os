@@ -1,0 +1,210 @@
+"use client";
+
+import React, { useState } from "react";
+import { mockOrders, mockNotifications, mockProducts } from "@/lib/mockData";
+import { calculateDashboardMetrics } from "@/lib/dashboardMetrics";
+import { ORDER_STATUS_LABELS, CHANNEL_LABELS } from "@/lib/statusLabels";
+import Link from "next/link";
+
+export default function DashboardPage() {
+  const [orders] = useState(mockOrders);
+  const [notifications] = useState(mockNotifications);
+  const [products] = useState(mockProducts);
+
+  const metrics = calculateDashboardMetrics(orders);
+
+  // Filter orders needing immediate attention (issue or waiting payment / waiting address)
+  const actionItems = orders.filter((o) => o.status === "issue" || o.status === "paid_waiting_address");
+
+  const formatTHB = (amount: number) => {
+    return new Intl.NumberFormat("th-TH", {
+      style: "currency",
+      currency: "THB",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Title Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Live Merchant Dashboard</h1>
+          <p className="text-sm text-slate-400">Real-time status calculated from simulated sales channels</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          Live Stream Mode: Off
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        {/* Sales Cards */}
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Sales Volume</p>
+          <p className="text-2xl md:text-3xl font-extrabold text-emerald-400">{formatTHB(metrics.totalSalesAmount)}</p>
+          <div className="flex justify-between text-[11px] text-slate-500 border-t border-slate-800 pt-2">
+            <span>Exclude cancelled/expired</span>
+          </div>
+        </div>
+
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Collected / Paid</p>
+          <p className="text-2xl md:text-3xl font-extrabold text-white">{formatTHB(metrics.paidAmount)}</p>
+          <div className="flex justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+            <span>Progress</span>
+            <span className="font-semibold text-emerald-400">
+              {((metrics.paidAmount / (metrics.totalSalesAmount || 1)) * 100).toFixed(0)}%
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Outstanding Balance</p>
+          <p className="text-2xl md:text-3xl font-extrabold text-rose-400">{formatTHB(metrics.outstandingAmount)}</p>
+          <div className="flex justify-between text-[11px] text-slate-500 border-t border-slate-800 pt-2">
+            <span>Pending collection</span>
+          </div>
+        </div>
+
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Orders Intake</p>
+          <p className="text-2xl md:text-3xl font-extrabold text-indigo-400">{metrics.totalOrders}</p>
+          <div className="flex justify-between text-[11px] text-slate-500 border-t border-slate-800 pt-2">
+            <span>All status categories</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Process Pipeline Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
+          <p className="text-[10px] text-slate-400 font-bold uppercase">Confirmed</p>
+          <p className="text-xl font-bold text-white mt-1">{metrics.confirmedOrders}</p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
+          <p className="text-[10px] text-slate-400 font-bold uppercase">Waiting Pay</p>
+          <p className="text-xl font-bold text-yellow-400 mt-1">{metrics.waitingPaymentOrders}</p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
+          <p className="text-[10px] text-slate-400 font-bold uppercase">Waiting Addr</p>
+          <p className="text-xl font-bold text-cyan-400 mt-1">{metrics.waitingAddressOrders}</p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
+          <p className="text-[10px] text-slate-400 font-bold uppercase">Ready to Ship</p>
+          <p className="text-xl font-bold text-emerald-400 mt-1">{metrics.readyToShipOrders}</p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
+          <p className="text-[10px] text-slate-400 font-bold uppercase">Paid (Total)</p>
+          <p className="text-xl font-bold text-indigo-400 mt-1">{metrics.paidOrders}</p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center bg-rose-950/20 border-rose-900/40">
+          <p className="text-[10px] text-rose-400 font-bold uppercase">Issues</p>
+          <p className="text-xl font-bold text-rose-500 mt-1">{metrics.issueOrders}</p>
+        </div>
+      </div>
+
+      {/* Main dashboard content grids */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Side: Tasks / Action Needed */}
+        <div className="lg:col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
+          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+            <h2 className="text-lg font-bold text-white">Action Needed Queue / ออเดอร์ที่ต้องตรวจสอบ</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-950 text-rose-400 border border-rose-500/20">
+              {actionItems.length} Urgent Cases
+            </span>
+          </div>
+
+          <div className="divide-y divide-slate-800">
+            {actionItems.map((order) => {
+              const statusInfo = ORDER_STATUS_LABELS[order.status];
+              const channelInfo = CHANNEL_LABELS[order.channelType];
+              return (
+                <div key={order.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono font-bold text-slate-200">{order.id}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded border ${statusInfo.bgClass} ${statusInfo.textClass} ${statusInfo.borderClass}`}>
+                        {statusInfo.label}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Channel: <span className="font-semibold">{channelInfo?.label}</span> | Total: <span className="text-slate-200">{formatTHB(order.totalAmount)}</span>
+                    </p>
+                  </div>
+                  <Link
+                    href="/orders"
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition"
+                  >
+                    Resolve Case
+                  </Link>
+                </div>
+              );
+            })}
+            {actionItems.length === 0 && (
+              <p className="text-sm text-slate-500 py-6 text-center">All orders in order. No issues detected.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Right Side: Quick Alerts & Channel Status */}
+        <div className="space-y-6">
+          {/* Active Notifications */}
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h2 className="text-md font-bold text-white">System Alerts</h2>
+              <Link href="/notifications" className="text-xs text-emerald-400 hover:underline">
+                View All
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {notifications.slice(0, 3).map((not) => (
+                <div
+                  key={not.id}
+                  className={`p-3 rounded-lg border text-xs space-y-1 ${
+                    not.alertLevel === "critical"
+                      ? "bg-rose-950/20 border-rose-900/50 text-rose-200"
+                      : not.alertLevel === "warning"
+                      ? "bg-amber-950/20 border-amber-900/50 text-amber-200"
+                      : "bg-slate-900 border-slate-800 text-slate-300"
+                  }`}
+                >
+                  <div className="font-bold flex items-center justify-between">
+                    <span className="uppercase">{not.alertLevel} alert</span>
+                    <span className="text-[9px] text-slate-500 font-normal">
+                      {new Date(not.createdAt).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <p className="leading-relaxed">{not.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Catalog Stock Warning */}
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
+            <h2 className="text-md font-bold text-white border-b border-slate-800 pb-3">Low Stock Warnings</h2>
+            <div className="space-y-2.5">
+              {products
+                .filter((p) => p.availableStock <= 10)
+                .map((prod) => (
+                  <div key={prod.id} className="flex justify-between items-center text-xs">
+                    <div>
+                      <p className="font-semibold text-slate-200">{prod.name.split(" (")[0]}</p>
+                      <p className="text-[10px] text-slate-500">SKU: {prod.sku}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/50 font-bold">
+                        {prod.availableStock} left
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
