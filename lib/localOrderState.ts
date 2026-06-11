@@ -37,6 +37,15 @@ export function updateSimulatedOrder(order: Order): void {
   saveSimulatedOrders(updated);
 }
 
+export function upsertSimulatedOrder(order: Order): void {
+  const current = getSimulatedOrders();
+  const exists = current.some((o) => o.id === order.id);
+  const updated = exists
+    ? current.map((o) => (o.id === order.id ? order : o))
+    : [order, ...current];
+  saveSimulatedOrders(updated);
+}
+
 // --- Order Items Persistence ---
 export function getSimulatedOrderItems(): OrderItem[] {
   if (!isBrowser) return [];

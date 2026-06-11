@@ -15,6 +15,7 @@ import {
 } from "@/lib/orderLifecycleSimulator";
 import {
   addSimulatedOrder,
+  upsertSimulatedOrder,
   addSimulatedEvent,
   addSimulatedNotification,
   resetSimulationState,
@@ -203,8 +204,7 @@ export default function SimulatorPage() {
     // Add to LocalStorage
     addSimulatedOrderItem(item);
     addSimulatedStockMovement(reservationMovement);
-    addSimulatedOrder(reservedOrder);
-    addSimulatedEvent(draftEvent);
+    upsertSimulatedOrder(reservedOrder);
 
     // Link simulated message to order
     if (activeMessageId) {
@@ -277,8 +277,8 @@ export default function SimulatorPage() {
       });
     }
 
-    // Sync to local order state
-    addSimulatedOrder(order);
+    // Sync to local order state using upsert
+    upsertSimulatedOrder(order);
     setCurrentStep(4);
   };
 
@@ -286,20 +286,35 @@ export default function SimulatorPage() {
   const handleSubmitAddress = () => {
     if (!activeOrder) return;
 
-    const updatedOrder = collectAddress(activeOrder, addressInput);
+    const updatedOrder = {
+      ...activeOrder,
+      shippingAddress: addressInput,
+      updatedAt: new Date().toISOString(),
+    };
     setActiveOrder(updatedOrder);
 
     const addressEvent = createOrderEvent(updatedOrder.id, "address_received", `บันทึกที่อยู่จัดส่งของลูกค้าแล้ว: "${addressInput}"`);
     setActiveEvents((prev) => [addressEvent, ...prev]);
     addSimulatedEvent(addressEvent);
 
-    if (updatedOrder.status === "ready_to_ship") {
-      const readyEvent = createOrderEvent(updatedOrder.id, "ready_to_ship", "ย้ายออเดอร์เข้าสู่คิวเตรียมพร้อมจัดส่งสินค้าสำเร็จ");
-      setActiveEvents((prev) => [readyEvent, ...prev]);
-      addSimulatedEvent(readyEvent);
-    }
+    upsertSimulatedOrder(updatedOrder);
+  };
 
-    addSimulatedOrder(updatedOrder);
+  const handleMoveToReadyToShip = () => {
+    if (!activeOrder) return;
+
+    const updatedOrder = {
+      ...activeOrder,
+      status: "ready_to_ship" as const,
+      updatedAt: new Date().toISOString()
+    };
+    setActiveOrder(updatedOrder);
+
+    const readyEvent = createOrderEvent(updatedOrder.id, "ready_to_ship", "ย้ายออเดอร์เข้าสู่คิวเตรียมพร้อมจัดส่งสินค้าสำเร็จ");
+    setActiveEvents((prev) => [readyEvent, ...prev]);
+    addSimulatedEvent(readyEvent);
+
+    upsertSimulatedOrder(updatedOrder);
   };
 
   const handleAddTracking = () => {
@@ -331,7 +346,7 @@ export default function SimulatorPage() {
       addSimulatedStockMovement(saleMovement);
     }
 
-    addSimulatedOrder(order);
+    upsertSimulatedOrder(order);
 
     addSimulatedNotification({
       id: `not_${Date.now()}`,
@@ -566,7 +581,7 @@ export default function SimulatorPage() {
                       // Bypass override mock status to let demo continue
                       const overridden = { ...activeOrder, status: "paid_waiting_address" as const, paidAmount: activeOrder.totalAmount, outstandingAmount: 0 };
                       setActiveOrder(overridden);
-                      addSimulatedOrder(overridden);
+                      upsertSimulatedOrder(overridden);
 
                       const overrideEvent = createOrderEvent(
                         activeOrder.id,
@@ -594,14 +609,32 @@ export default function SimulatorPage() {
                     />
                     
                     {activeOrder.status !== "ready_to_ship" && activeOrder.status !== "shipped" && (
-                      <button
-                        onClick={handleSubmitAddress}
-                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition"
-                      >
-                        บันทึกที่อยู่ลูกค้า (Collect Address)
-                      </button>
+                      <div>
+                        <button
+                          onClick={handleSubmitAddress}
+                          className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition"
+                        >
+                          บันทึกที่อยู่ลูกค้า (Collect Address)
+                        </button>
+                      </div>
                     )}
                   </div>
+
+                  {/* Move to ready to ship step */}
+                  {activeOrder.shippingAddress && activeOrder.status === "paid_waiting_address" && (
+                    <div className="space-y-2 border-t border-slate-850 pt-4">
+                      <label className="text-xs text-slate-400 block font-semibold">ขั้นตอนต่อไป: ดำเนินงานจัดเตรียมจัดส่งสินค้า</label>
+                      <button
+                        onClick={handleMoveToReadyToShip}
+                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition"
+                      >
+                        ย้ายเข้าคิวพร้อมส่ง
+                      </button>
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        * สถานะ "พร้อมส่ง" (Ready to Ship) = ได้รับยอดชำระแล้ว + บันทึกที่อยู่ลูกค้าแล้ว + รอดำเนินการจัดส่งสินค้าจากผู้ขาย
+                      </p>
+                    </div>
+                  )}
 
                   {/* Tracking input */}
                   {(activeOrder.status === "ready_to_ship" || activeOrder.status === "shipped") && (
@@ -620,10 +653,13 @@ export default function SimulatorPage() {
                             onClick={handleAddTracking}
                             className="bg-indigo-500 hover:bg-indigo-400 text-white font-bold px-4 py-2 rounded-lg text-xs transition"
                           >
-                            ย้ายเข้าคิวพร้อมส่ง & เพิ่มเลขพัสดุ (Move to Ready to Ship & Add Tracking)
+                            เพิ่มเลขพัสดุและเปลี่ยนเป็นส่งแล้ว
                           </button>
                         )}
                       </div>
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        * สถานะ "ส่งแล้ว" (Shipped) = เพิ่มหมายเลขพัสดุลงในระบบและจัดส่งสินค้าแล้ว
+                      </p>
                     </div>
                   )}
 
