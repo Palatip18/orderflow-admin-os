@@ -1,11 +1,23 @@
 import { IncomingMessage, Order, OrderEvent, MerchantNotification, OrderItem } from "@/types/orderflow";
 
+export interface PendingLineOrderContext {
+  lineUserId: string;
+  productCode: string;
+  productId?: string;
+  productName: string;
+  quantity: number;
+  sourceIncomingMessageId: string;
+  createdAt: string;
+  status: "waiting_variant";
+}
+
 interface ServerStore {
   incomingMessages: IncomingMessage[];
   orders: Order[];
   events: OrderEvent[];
   notifications: MerchantNotification[];
   items: OrderItem[];
+  pendingLineOrders: Record<string, PendingLineOrderContext>;
 }
 
 // Ensure singleton across Hot Module Replacement in Next.js dev server
@@ -20,6 +32,7 @@ if (!globalForStore.__orderflow_server_store) {
     events: [],
     notifications: [],
     items: [],
+    pendingLineOrders: {},
   };
 }
 
@@ -87,10 +100,23 @@ export function updateServerOrderItem(item: OrderItem): void {
   store.items = store.items.map((i) => (i.id === item.id ? item : i));
 }
 
+export function setPendingLineOrder(userId: string, context: PendingLineOrderContext): void {
+  store.pendingLineOrders[userId] = context;
+}
+
+export function getPendingLineOrder(userId: string): PendingLineOrderContext | undefined {
+  return store.pendingLineOrders[userId];
+}
+
+export function clearPendingLineOrder(userId: string): void {
+  delete store.pendingLineOrders[userId];
+}
+
 export function resetServerStore(): void {
   store.incomingMessages = [];
   store.orders = [];
   store.events = [];
   store.notifications = [];
   store.items = [];
+  store.pendingLineOrders = {};
 }

@@ -32,25 +32,24 @@ Copy the secure HTTPS URL (e.g. `https://xxxx.ngrok-free.app`).
 5. Click **Verify** to test signature handshakes. If configured correctly, it will report "Success".
 
 ## 5. Test Chat Integration
-Add the LINE Official Account using the QR code in the Messaging API tab and test the following inputs:
+Add the LINE Official Account using the QR code in the Messaging API tab and run the following test sequences:
 
-### Test Case 1: Initial Interest & Catalog Match
-- **Input text**: `สนใจกางเกงช้างครับ A001`
-- **Expected reply**: `พบสินค้า กางเกงช้างยอดฮิต รหัส A001 ค่ะ ตอนนี้ยังมีสินค้า กรุณาระบุสีและไซด์ที่ต้องการ เช่น 'ขาว S' เพื่อให้ระบบจำลองการยืนยันออเดอร์ต่อค่ะ`
+### Test Sequence A — Pending Variant Follow-up
+1. **Send Message 1**: `สนใจกางเกงช้างครับ A001`
+   - **Expected Bot Reply**: `พบสินค้า Classic Elephant Pants (กางเกงช้างรุ่นคลาสสิก) รหัส A001 ค่ะ ตอนนี้ยังมีสินค้า กรุณาระบุสีและไซด์ที่ต้องการ เช่น 'ขาว S' เพื่อให้ระบบจำลองการยืนยันออเดอร์ต่อค่ะ`
+   - *This creates a pending order context in memory on the server.*
+2. **Send Message 2**: `ขาว S`
+   - **Expected Bot Reply**: `รับออเดอร์จำลองเรียบร้อยค่ะ Classic Elephant Pants (กางเกงช้างรุ่นคลาสสิก) White S จำนวน 1 ชิ้น ระบบจะจำลองการจองสินค้าและรอชำระเงินค่ะ`
+   - *This completes the pending order context and transitions the status to Reserved / Waiting payment.*
 
-### Test Case 2: Completing Variants
-- **Input text**: `CF A001 ขาว S`
-- **Expected reply**: `รับออเดอร์จำลองเรียบร้อยค่ะ กางเกงช้างยอดฮิต ขาว S จำนวน 1 ชิ้น ระบบจะจำลองการจองสินค้าและรอชำระเงินค่ะ`
+### Test Sequence B — Full Order Command
+1. **Send Message**: `CF A001 ขาว S`
+   - **Expected Bot Reply**: `รับออเดอร์จำลองเรียบร้อยค่ะ Classic Elephant Pants (กางเกงช้างรุ่นคลาสสิก) White S จำนวน 1 ชิ้น ระบบจะจำลองการจองสินค้าและรอชำระเงินค่ะ`
+   - *This immediately parses a complete order intent and registers the reserved order.*
 
-### Test Case 3: Variant-only Response (State-aware Flow)
-- *Ensure you have an active order waiting for variants by sending `A001`.*
-- **Input text**: `ขาว S`
-- **Expected reply**: `รับออเดอร์จำลองเรียบร้อยค่ะ กางเกงช้างยอดฮิต ขาว S จำนวน 1 ชิ้น ระบบจะจำลองการจองสินค้าและรอชำระเงินค่ะ`
+### Test Sequence C — Unavailable Variant Selection
+1. **Send Message 1**: `สนใจกางเกงช้างครับ A001`
+2. **Send Message 2**: `ส้ม L`
+   - **Expected Bot Reply**: `พบสินค้า Classic Elephant Pants (กางเกงช้างรุ่นคลาสสิก) ค่ะ แต่สี/ไซด์ที่เลือกยังไม่มีใน catalog จำลอง กรุณาเลือกจากตัวเลือกที่มี: Black / Free Size, Navy / Free Size, White / S ค่ะ`
+   - *Bot lists available variants instead of looping into a generic error.*
 
-### Test Case 4: Missing product code
-- **Input text**: `สนใจเสื้อลายทาง`
-- **Expected reply**: `ระบบได้รับข้อความแล้วค่ะ แต่ยังไม่สามารถแปลงเป็นออเดอร์ได้ชัดเจน กรุณาพิมพ์รหัสสินค้า เช่น A001 หรือ CF A001 ขาว S ค่ะ`
-
-### Test Case 5: Product Code Not Found
-- **Input text**: `CF Z999`
-- **Expected reply**: `ขออภัยค่ะ ระบบยังไม่พบรหัสสินค้านี้ใน catalog จำลอง กรุณาตรวจสอบรหัสสินค้าอีกครั้ง หรือรอแอดมินตรวจสอบค่ะ`

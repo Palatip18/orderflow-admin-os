@@ -144,6 +144,7 @@ export const mockVariants: ProductVariant[] = [
   // Elephant Pants Variants
   { id: "var_ele_black", productId: "prod_001", name: "Black / Free Size", sku: "A001-BLK", price: 199, availableStock: 60, reservedStock: 10, soldStock: 25, createdAt: "2026-01-20T10:00:00Z" },
   { id: "var_ele_navy", productId: "prod_001", name: "Navy / Free Size", sku: "A001-NVY", price: 199, availableStock: 60, reservedStock: 5, soldStock: 20, createdAt: "2026-01-20T10:00:00Z" },
+  { id: "var_ele_white_s", productId: "prod_001", name: "White / S", sku: "A001-WHT-S", price: 199, availableStock: 50, reservedStock: 0, soldStock: 5, createdAt: "2026-01-20T10:00:00Z" },
 
   // Thai Silk Dress Variants
   { id: "var_slk_pink_m", productId: "prod_002", name: "Rose Pink / M", sku: "B002-PNK-M", price: 1290, availableStock: 3, reservedStock: 1, soldStock: 5, createdAt: "2026-02-15T11:00:00Z" },

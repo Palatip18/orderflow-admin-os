@@ -6,8 +6,8 @@ We have successfully integrated a live, secure LINE Messaging API Webhook into t
 ### Key Components Delivered
 1. **Signature Verification (`lib/lineSignature.ts`)**: Secure HMAC-SHA256 comparison on raw text requests before parsing JSON payload.
 2. **Reply Client Wrapper (`lib/lineClient.ts`)**: Low-overhead connection to LINE's reply API (`/v2/bot/message/reply`). Restricts capabilities strictly to reply token payloads.
-3. **Intent Parsing Mapper (`lib/lineMessageMapper.ts`)**: State-aware parsing supporting SKU matches, variant questions/resolutions, and simulated payment slip/address inputs.
-4. **In-Memory server state store (`lib/serverSimulationStore.ts`)**: Thread-safe hot-reload-guarded global state singleton to hold simulation inputs, orders, items, events, and notifications.
+3. **Intent Parsing Mapper (`lib/lineMessageMapper.ts`)**: State-aware parsing supporting SKU matches, variant questions/resolutions, simulated payment slip/address inputs, bilingually normalized color and size keywords (e.g. ขาว/White, S), and unavailable variant selection suggestion hints.
+4. **In-Memory server state store (`lib/serverSimulationStore.ts`)**: Thread-safe global state singleton to hold simulation data and a stateful `pendingLineOrders` dictionary to preserve LINE conversation contexts between messages.
 5. **Webhook Route Endpoint (`app/api/line/webhook/route.ts`)**: Main ingest route with signature filters, disabled environment flag safety guards, and error-resilient client invocations.
 6. **Server-State Sync Endpoint (`app/api/simulation/server-state/route.ts`)**: Exposes GET (cache disabled) and DELETE (reset state) methods.
 7. **Config-Status Endpoint (`app/api/settings/config-status/route.ts`)**: Exposes boolean env status indicators to avoid leaking secret tokens to frontend clients.
