@@ -7,9 +7,9 @@ export default function SimulationNotice() {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <div>
-        <span className="font-bold block mb-0.5">Sprint 0B Simulator Workspace (Demo Only)</span>
+        <span className="font-bold block mb-0.5">ระบบจำลองและทดสอบขั้นตอนรับออเดอร์ Sprint 0B (Demo Only)</span>
         <p className="leading-relaxed text-slate-350">
-          This system demonstrates simulated order intakes, mock variant updates, and mock QR validations. No real database updates, webhooks (LINE, FB comments, TikTok comments), SlipOK bank reconciliations, or external API transactions are executed.
+          ระบบนี้ใช้เพื่อจำลองขั้นตอนการรับออเดอร์ การเลือกสี/ไซส์ และการสแกนสลิปโอนเงินแบบจำลองเท่านั้น โดยยังไม่มีการบันทึกฐานข้อมูลจริง ไม่มีการเชื่อมต่อ Webhook จริง (LINE, FB, TikTok) ไม่มีการตรวจสลิปผ่าน SlipOK หรือธนาคารจริง และไม่มีการทำธุรกรรมการเงินภายนอกใดๆ ทั้งสิ้น
         </p>
       </div>
     </div>

@@ -42,12 +42,12 @@ export default function DashboardPage() {
       {/* Title Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Live Merchant Dashboard</h1>
-          <p className="text-sm text-slate-400">Simulated live dashboard calculated from mock sales channel data</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">แดชบอร์ดสดแบบจำลอง (Live Dashboard)</h1>
+          <p className="text-sm text-slate-400">ข้อมูลในหน้านี้คำนวณจาก mock data และ browser-local simulation state เท่านั้น</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          Live Stream Mode: Off
+          โหมดสตรีมสด: ปิด (Live Mode: Off)
         </div>
       </div>
 
@@ -55,18 +55,18 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Sales Cards */}
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Sales Volume</p>
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">ยอดขายรวม (Total Sales)</p>
           <p className="text-2xl md:text-3xl font-extrabold text-emerald-400">{formatTHB(metrics.totalSalesAmount)}</p>
           <div className="flex justify-between text-[11px] text-slate-500 border-t border-slate-800 pt-2">
-            <span>Exclude cancelled/expired</span>
+            <span>ไม่รวมรายการยกเลิก/หมดเวลา</span>
           </div>
         </div>
 
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Collected / Paid</p>
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">ยอดรับชำระแล้ว (Paid Amount)</p>
           <p className="text-2xl md:text-3xl font-extrabold text-white">{formatTHB(metrics.paidAmount)}</p>
           <div className="flex justify-between text-[11px] text-slate-450 pt-2 border-t border-slate-800">
-            <span className="text-slate-400">Progress</span>
+            <span className="text-slate-400">สัดส่วนที่จ่ายแล้ว</span>
             <span className="font-semibold text-emerald-400">
               {((metrics.paidAmount / (metrics.totalSalesAmount || 1)) * 100).toFixed(0)}%
             </span>
@@ -74,18 +74,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Outstanding Balance</p>
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">ยอดค้างชำระ (Outstanding)</p>
           <p className="text-2xl md:text-3xl font-extrabold text-rose-400">{formatTHB(metrics.outstandingAmount)}</p>
           <div className="flex justify-between text-[11px] text-slate-500 border-t border-slate-800 pt-2">
-            <span>Pending collection</span>
+            <span>รอยืนยันยอดโอนเงิน</span>
           </div>
         </div>
 
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2 col-span-2 sm:col-span-1">
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Orders Intake</p>
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">ออเดอร์ทั้งหมด (Total Orders)</p>
           <p className="text-2xl md:text-3xl font-extrabold text-indigo-400">{metrics.totalOrders}</p>
           <div className="flex justify-between text-[11px] text-slate-500 border-t border-slate-800 pt-2">
-            <span>All status categories</span>
+            <span>ทุกสถานะรายการออเดอร์</span>
           </div>
         </div>
       </div>
@@ -93,27 +93,27 @@ export default function DashboardPage() {
       {/* Process Pipeline Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
-          <p className="text-[10px] text-slate-400 font-bold uppercase">Confirmed</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase">ยืนยันแล้ว</p>
           <p className="text-xl font-bold text-white mt-1">{metrics.confirmedOrders}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
-          <p className="text-[10px] text-slate-400 font-bold uppercase">Waiting Pay</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase">รอจ่าย</p>
           <p className="text-xl font-bold text-yellow-400 mt-1">{metrics.waitingPaymentOrders}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
-          <p className="text-[10px] text-slate-400 font-bold uppercase">Waiting Addr</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase">รอที่อยู่</p>
           <p className="text-xl font-bold text-cyan-400 mt-1">{metrics.waitingAddressOrders}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
-          <p className="text-[10px] text-slate-400 font-bold uppercase">Ready to Ship</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase">พร้อมส่ง</p>
           <p className="text-xl font-bold text-emerald-400 mt-1">{metrics.readyToShipOrders}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center">
-          <p className="text-[10px] text-slate-400 font-bold uppercase">Paid (Total)</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase">จ่ายแล้ว (Paid)</p>
           <p className="text-xl font-bold text-indigo-400 mt-1">{metrics.paidOrders}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 text-center bg-rose-950/20 border-rose-900/40">
-          <p className="text-[10px] text-rose-400 font-bold uppercase">Issues</p>
+          <p className="text-[10px] text-rose-400 font-bold uppercase">เคสมีปัญหา</p>
           <p className="text-xl font-bold text-rose-500 mt-1">{metrics.issueOrders}</p>
         </div>
       </div>
@@ -123,9 +123,9 @@ export default function DashboardPage() {
         {/* Left Side: Tasks / Action Needed */}
         <div className="lg:col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
           <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-            <h2 className="text-lg font-bold text-white">Action Needed Queue / ออเดอร์ที่ต้องตรวจสอบ</h2>
+            <h2 className="text-lg font-bold text-white">คิวออเดอร์ที่ต้องดำเนินการ (Action Required)</h2>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-950 text-rose-400 border border-rose-500/20">
-              {actionItems.length} Urgent Cases
+              {actionItems.length} เคสเร่งด่วน
             </span>
           </div>
 
@@ -143,20 +143,20 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-400">
-                      Channel: <span className="font-semibold">{channelInfo?.label}</span> | Total: <span className="text-slate-200">{formatTHB(order.totalAmount)}</span>
+                      ช่องทาง: <span className="font-semibold">{channelInfo?.label}</span> | ยอดรวม: <span className="text-slate-200">{formatTHB(order.totalAmount)}</span>
                     </p>
                   </div>
                   <Link
                     href="/orders"
                     className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition"
                   >
-                    Resolve Case
+                    จัดการแก้ไข (Resolve)
                   </Link>
                 </div>
               );
             })}
             {actionItems.length === 0 && (
-              <p className="text-sm text-slate-500 py-6 text-center">All orders in order. No issues detected.</p>
+              <p className="text-sm text-slate-500 py-6 text-center">ไม่มีออเดอร์ตกค้างหรือพบปัญหา</p>
             )}
           </div>
         </div>
@@ -166,9 +166,9 @@ export default function DashboardPage() {
           {/* Active Notifications */}
           <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h2 className="text-md font-bold text-white">Simulation Log Events</h2>
+              <h2 className="text-md font-bold text-white">เหตุการณ์ล่าสุด (Recent Events)</h2>
               <Link href="/notifications" className="text-xs text-emerald-400 hover:underline">
-                View Alerts
+                ดูการแจ้งเตือนทั้งหมด
               </Link>
             </div>
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
@@ -186,7 +186,7 @@ export default function DashboardPage() {
 
           {/* Catalog Stock Warning */}
           <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
-            <h2 className="text-md font-bold text-white border-b border-slate-800 pb-3">Low Stock Warnings</h2>
+            <h2 className="text-md font-bold text-white border-b border-slate-800 pb-3">สินค้าสต็อกใกล้หมด (Low Stock)</h2>
             <div className="space-y-2.5">
               {products
                 .filter((p) => p.availableStock <= 10)
@@ -198,7 +198,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/50 font-bold">
-                        {prod.availableStock} left
+                        เหลืออีก {prod.availableStock} ชิ้น
                       </span>
                     </div>
                   </div>

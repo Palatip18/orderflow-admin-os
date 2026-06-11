@@ -13,13 +13,13 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-4">
           <Link href="/about" className="text-sm text-slate-400 hover:text-slate-200 transition">
-            Architecture
+            ดูแผนระบบ
           </Link>
           <Link
             href="/dashboard"
             className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold px-4 py-2 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/10"
           >
-            Launch OS Console
+            เข้าสู่แดชบอร์ด
           </Link>
         </div>
       </header>
@@ -28,15 +28,15 @@ export default function Home() {
       <main className="max-w-5xl mx-auto px-6 py-16 flex-1 flex flex-col justify-center text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/50 border border-emerald-500/20 text-emerald-400 text-xs font-medium mx-auto mb-6">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-          Sprint 0A: Commercial-Ready Foundation Lock
+          Sprint 0B: ตัวจำลองขั้นตอนรับออเดอร์
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-          24/7 Omni-Channel Order Admin Automation for Thai Live Sellers
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+          ระบบแอดมินอัตโนมัติ 24/7 สำหรับรับออเดอร์หลายช่องทาง
         </h1>
 
-        <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed">
-          A scalable product concept and upgrade-ready architecture designed to capture order intent, manage live comments, check variant stock, verify payments, and queue shipments across LINE, Facebook, Instagram, and TikTok.
+        <p className="text-base md:text-lg text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed">
+          แพลตฟอร์มต้นแบบสำหรับร้านค้าออนไลน์และร้านไลฟ์สดในไทย ช่วยจำลองการรับออเดอร์ ตรวจสินค้า ถามสี/ไซด์ จองสินค้า ตรวจชำระเงินแบบ mock ขอที่อยู่ จัดคิวรอส่ง และติดตามสถานะผ่านแดชบอร์ดกลาง
         </p>
 
         {/* CTA buttons */}
@@ -45,7 +45,7 @@ export default function Home() {
             href="/dashboard"
             className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-8 py-4 rounded-xl transition duration-200 shadow-xl shadow-emerald-500/20 text-lg flex items-center justify-center gap-2"
           >
-            <span>Launch Live Dashboard</span>
+            <span>เข้าสู่แดชบอร์ด</span>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
@@ -54,7 +54,7 @@ export default function Home() {
             href="/about"
             className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white font-semibold px-8 py-4 rounded-xl transition duration-200 border border-slate-700 text-lg"
           >
-            Read Technical Roadmap
+            ดูแผนระบบ
           </Link>
         </div>
 
@@ -64,10 +64,10 @@ export default function Home() {
             <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Portfolio MVP & Architecture Showcase Notice</span>
+            <span>หมายเหตุ: Portfolio MVP / ระบบจำลองเพื่อแสดงแนวคิด</span>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            OrderFlow Admin OS is a **scalable product concept** and **upgrade-ready architecture**. It is NOT a production SaaS product yet. All integrations (LINE OA, Facebook Messenger, Facebook Live, SlipOK payment checks, and AI parsing) are **simulated using mock channel adapters** and rule-based workflow pipelines. No real API credentials, databases, or payment transactions are processed in this sprint.
+            OrderFlow Admin OS เป็น commercial-ready portfolio MVP และ scalable product concept ยังไม่ใช่ระบบ SaaS ที่เปิดใช้งานจริง การเชื่อมต่อ LINE, Facebook, Instagram, TikTok, SlipOK, AI และ payment verification ทั้งหมดเป็น simulated/mock ใน Sprint นี้ ไม่มีการเชื่อมต่อ API จริง ไม่มีฐานข้อมูลจริง และไม่มีธุรกรรมเงินจริง
           </p>
         </div>
 
@@ -79,9 +79,9 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Simulated Omni-Channel Inbox</h3>
+            <h3 className="text-lg font-bold text-white mb-2">กล่องข้อความรวมหลายช่องทางแบบจำลอง</h3>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Consolidate messages and comments from LINE OA, Facebook Messenger, Facebook Live, IG, and TikTok. View AI-assisted intent parsing mockups directly from the console.
+              รวมข้อความและความคิดเห็นจาก LINE OA, Facebook Messenger, Facebook Live, IG และ TikTok แสดงการประมวลผล Intent ด้วย AI แบบจำลองได้จากระบบโดยตรง
             </p>
           </div>
 
@@ -91,9 +91,9 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Rule-Based Order Processing</h3>
+            <h3 className="text-lg font-bold text-white mb-2">ประมวลผลออเดอร์ด้วยกฎธุรกิจ</h3>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Manage automatic stock reservations with custom hold times. Status shifts follow strict business rules based on verified transaction codes and matching amounts.
+              จัดการการจองสินค้าอัตโนมัติพร้อมกำหนดเวลาจอง การเปลี่ยนสถานะออเดอร์เป็นไปตามกฎธุรกิจที่เข้มงวดโดยอิงตามรหัสธุรกรรมและยอดเงินที่ตรงกันแบบจำลอง
             </p>
           </div>
 
@@ -103,9 +103,9 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10l8 4m0-10L4 7m8 4v10M4 7v10l8 4m0-10L20 7m-8 4V3L4 7m8 4l8-4m0 0v10l-8 4" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">SQL-Ready Data Models</h3>
+            <h3 className="text-lg font-bold text-white mb-2">โครงสร้างข้อมูลพร้อมต่อยอด SQL</h3>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Equipped with an upgrade-ready PostgreSQL relational database design mapping customers, variant attributes, stock movements, and payment logs for future scaling.
+              ออกแบบโครงสร้างฐานข้อมูลเชิงสัมพันธ์สำหรับ PostgreSQL ที่พร้อมอัปเกรด ทั้งการจับคู่ลูกค้า คุณลักษณะตัวเลือกสินค้า ประวัติสต็อก และบันทึกการชำระเงินสำหรับรองรับการขยายตัวในอนาคต
             </p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-slate-850 bg-slate-950 py-8 text-center text-xs text-slate-500 px-6">
         <p>© 2026 OrderFlow Admin OS. Built as a commercial-grade portfolio MVP / Architecture Concept.</p>
-        <p className="mt-1">Sprint 0A Foundation Lock. Designed with Next.js, React, Tailwind, and TypeScript.</p>
+        <p className="mt-1">Sprint 0B: ตัวจำลองขั้นตอนรับออเดอร์. Designed with Next.js, React, Tailwind, and TypeScript.</p>
       </footer>
     </div>
   );

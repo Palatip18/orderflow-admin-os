@@ -30,11 +30,11 @@ import ParsedIntentCard from "@/components/ParsedIntentCard";
 import OrderLifecycleTimeline from "@/components/OrderLifecycleTimeline";
 
 const PRESET_MESSAGES: { channel: ChannelType; text: string; label: string }[] = [
-  { channel: "line", text: "สนใจกางเกงช้างครับ A001", label: "LINE: Inquiry for A001 (Missing Variant)" },
-  { channel: "facebook_live", text: "A001 ดำ 1 ตัวครับ", label: "FB Live: Order A001 Black (Full Match)" },
-  { channel: "instagram_dm", text: "สั่งเดรสผ้าไหม B002 สีทอง ไซส์ M 1 ชุดค่ะ", label: "IG DM: Order B002 Gold M (Full Match)" },
-  { channel: "tiktok_live", text: "เอาเสื้อ B002 2 ชิ้นครับ", label: "TikTok: Order B002 (Missing Variant)" },
-  { channel: "web_order", text: "สั่งกระเป๋า C003 1 ชิ้นค่ะ", label: "Web Link: Order C003 (Single Variant Match)" }
+  { channel: "line", text: "สนใจกางเกงช้างครับ A001", label: "LINE: สนใจ A001 (ยังไม่เลือกสี/ไซส์)" },
+  { channel: "facebook_live", text: "A001 ดำ 1 ตัวครับ", label: "FB Live: สั่ง A001 สีดำ (ข้อมูลครบ)" },
+  { channel: "instagram_dm", text: "สั่งเดรสผ้าไหม B002 สีทอง ไซส์ M 1 ชุดค่ะ", label: "IG DM: สั่ง B002 สีทอง M (ข้อมูลครบ)" },
+  { channel: "tiktok_live", text: "เอาเสื้อ B002 2 ชิ้นครับ", label: "TikTok: สั่ง B002 (ยังไม่เลือกสี/ไซส์)" },
+  { channel: "web_order", text: "สั่งกระเป๋า C003 1 ชิ้นค่ะ", label: "Web Link: สั่ง C003 (สินค้าไม่มีตัวเลือก)" }
 ];
 
 export default function SimulatorPage() {
@@ -58,10 +58,10 @@ export default function SimulatorPage() {
   const [trackingInput, setTrackingInput] = useState("TH1290382910A");
 
   const steps = [
-    { id: 1, label: "Message Intake" },
-    { id: 2, label: "Variant & Stock" },
-    { id: 3, label: "Reserve & Payment" },
-    { id: 4, label: "Address & Dispatch" }
+    { id: 1, label: "ข้อความเข้า (Message Intake)" },
+    { id: 2, label: "ตรวจสอบสต็อก (Variant & Stock)" },
+    { id: 3, label: "จองและชำระเงิน (Reserve & Payment)" },
+    { id: 4, label: "ที่อยู่และจัดส่ง (Address & Dispatch)" }
   ];
 
   // Load active simulation states if any existed in memory
@@ -89,7 +89,7 @@ export default function SimulatorPage() {
     setActiveIntent(intent);
 
     // Create event log
-    const event = createOrderEvent(intent.id, "order_detected", `Customer message detected via simulated ${CHANNEL_LABELS[selectedChannel].label}: "${inputText}"`);
+    const event = createOrderEvent(intent.id, "order_detected", `ตรวจพบข้อความจากลูกค้าผ่านทางช่องทางจำลอง ${CHANNEL_LABELS[selectedChannel].label}: "${inputText}"`);
     setActiveEvents([event]);
 
     // Check catalog matching
@@ -115,8 +115,8 @@ export default function SimulatorPage() {
       // Advance to step 2
       setCurrentStep(2);
     } else {
-      setStockStatus({ available: false, error: `Product code '${code || "unknown"}' not found in catalog.` });
-      const errorEvent = createOrderEvent(intent.id, "human_review_required", `Product check failed: product code '${code || "unknown"}' not found. Shifting to human review queue.`);
+      setStockStatus({ available: false, error: `ไม่พบรหัสสินค้า '${code || "unknown"}' ในระบบสินค้า` });
+      const errorEvent = createOrderEvent(intent.id, "human_review_required", `การตรวจสอบสินค้าล้มเหลว: ไม่พบรหัสสินค้า '${code || "unknown"}' ย้ายข้อมูลไปยังคิวตรวจสอบด้วยมือ (Human Review Queue)`);
       setActiveEvents((prev) => [errorEvent, ...prev]);
       setCurrentStep(2);
     }
@@ -128,7 +128,7 @@ export default function SimulatorPage() {
     setSelectedVariant(variant);
     setStockStatus({ available: variant.availableStock > 0 });
 
-    const variantEvent = createOrderEvent(activeIntent.id, "variant_required", `Variant specified: customer selected variant '${variant.name}'`);
+    const variantEvent = createOrderEvent(activeIntent.id, "variant_required", `ลูกค้าตอบตัวเลือกสินค้าเป็น '${variant.name}'`);
     setActiveEvents((prev) => [variantEvent, ...prev]);
   };
 
@@ -143,7 +143,7 @@ export default function SimulatorPage() {
     setActiveOrder(order);
     setActiveItem(item);
 
-    const draftEvent = createOrderEvent(order.id, "status_change", `Draft order created successfully. Current Status: ${order.status}`);
+    const draftEvent = createOrderEvent(order.id, "status_change", `สร้างร่างออเดอร์สำเร็จ สถานะปัจจุบัน: ${order.status}`);
     setActiveEvents((prev) => [draftEvent, ...prev]);
     
     // Auto advance to reserve payment step
@@ -168,7 +168,7 @@ export default function SimulatorPage() {
     addSimulatedOrder(reservedOrder);
     addSimulatedEvent(draftEvent);
 
-    const reserveEvent = createOrderEvent(order.id, "stock_reserved", `Stock reserved for ${item.quantity} item(s). Hold expires at: ${new Date(reservedOrder.expiresAt || "").toLocaleTimeString()}`);
+    const reserveEvent = createOrderEvent(order.id, "stock_reserved", `ระบบจองสินค้าจำนวน ${item.quantity} รายการแล้ว ระยะเวลาจองจะหมดอายุเวลา: ${new Date(reservedOrder.expiresAt || "").toLocaleTimeString()}`);
     setActiveEvents((prev) => [reserveEvent, ...prev]);
     addSimulatedEvent(reserveEvent);
 
@@ -177,7 +177,7 @@ export default function SimulatorPage() {
       id: `not_${Date.now()}`,
       merchantId: "mch_001",
       alertLevel: "info",
-      message: `Stock reserved successfully for order #${order.id} via simulated ${CHANNEL_LABELS[selectedChannel].label}`,
+      message: `ระบบจำลองทำการล็อคคลังสินค้าสำหรับออเดอร์ #${order.id} ผ่าน ${CHANNEL_LABELS[selectedChannel].label} เรียบร้อย`,
       orderId: order.id,
       isRead: false,
       createdAt: new Date().toISOString()
@@ -196,13 +196,13 @@ export default function SimulatorPage() {
     const verifyEvent = createOrderEvent(
       order.id,
       "payment_verified_mock",
-      `Payment slip scan completed. Code reference ref detected: ${payment.transactionRef}. Result: ${payment.paymentStatus}`
+      `จำลองการสแกนสลิปโอนเงินสำเร็จ ตรวจพบเลขอ้างอิงสลิป: ${payment.transactionRef}. ผลลัพธ์: ${payment.paymentStatus}`
     );
     setActiveEvents((prev) => [verifyEvent, ...prev]);
     addSimulatedEvent(verifyEvent);
 
     if (order.status === "issue") {
-      const issueEvent = createOrderEvent(order.id, "human_review_required", `Verification issues detected. Reason: ${payment.paymentStatus}. Admin intervention needed.`);
+      const issueEvent = createOrderEvent(order.id, "human_review_required", `ระบบจำลองตรวจพบปัญหายอดชำระเงิน: ${payment.paymentStatus} จำเป็นต้องให้แอดมินตรวจสอบ`);
       setActiveEvents((prev) => [issueEvent, ...prev]);
       addSimulatedEvent(issueEvent);
 
@@ -210,7 +210,7 @@ export default function SimulatorPage() {
         id: `not_${Date.now()}`,
         merchantId: "mch_001",
         alertLevel: "critical",
-        message: `Order #${order.id} verification issue detected: ${payment.paymentStatus}`,
+        message: `ออเดอร์ #${order.id} ตรวจพบความผิดปกติในการชำระเงิน: ${payment.paymentStatus}`,
         orderId: order.id,
         isRead: false,
         createdAt: new Date().toISOString()
@@ -220,7 +220,7 @@ export default function SimulatorPage() {
         id: `not_${Date.now()}`,
         merchantId: "mch_001",
         alertLevel: "info",
-        message: `Order #${order.id} payment verified. Waiting for shipping address details.`,
+        message: `ออเดอร์ #${order.id} ตรวจสอบการชำระเงินจำลองผ่านแล้ว อยู่ระหว่างรอข้อมูลที่อยู่ผู้รับ`,
         orderId: order.id,
         isRead: false,
         createdAt: new Date().toISOString()
@@ -239,12 +239,12 @@ export default function SimulatorPage() {
     const updatedOrder = collectAddress(activeOrder, addressInput);
     setActiveOrder(updatedOrder);
 
-    const addressEvent = createOrderEvent(updatedOrder.id, "address_received", `Shipping address captured: "${addressInput}"`);
+    const addressEvent = createOrderEvent(updatedOrder.id, "address_received", `บันทึกที่อยู่จัดส่งของลูกค้าแล้ว: "${addressInput}"`);
     setActiveEvents((prev) => [addressEvent, ...prev]);
     addSimulatedEvent(addressEvent);
 
     if (updatedOrder.status === "ready_to_ship") {
-      const readyEvent = createOrderEvent(updatedOrder.id, "ready_to_ship", "Order successfully advanced to ready-to-ship queues.");
+      const readyEvent = createOrderEvent(updatedOrder.id, "ready_to_ship", "ย้ายออเดอร์เข้าสู่คิวเตรียมพร้อมจัดส่งสินค้าสำเร็จ");
       setActiveEvents((prev) => [readyEvent, ...prev]);
       addSimulatedEvent(readyEvent);
     }
@@ -258,11 +258,11 @@ export default function SimulatorPage() {
     const { order, shipping } = addTracking(activeOrder, trackingInput);
     setActiveOrder(order);
 
-    const trackingEvent = createOrderEvent(order.id, "tracking_added", `Logistics tracking code uploaded: ${trackingInput} (${shipping.carrier})`);
+    const trackingEvent = createOrderEvent(order.id, "tracking_added", `บันทึกหมายเลขพัสดุและจัดส่งแล้ว: ${trackingInput} (${shipping.carrier})`);
     setActiveEvents((prev) => [trackingEvent, ...prev]);
     addSimulatedEvent(trackingEvent);
 
-    const completeEvent = createOrderEvent(order.id, "status_change", "Order successfully dispatched to courier.");
+    const completeEvent = createOrderEvent(order.id, "status_change", "ออเดอร์ถูกส่งต่อไปยังขนส่งเรียบร้อย");
     setActiveEvents((prev) => [completeEvent, ...prev]);
     addSimulatedEvent(completeEvent);
 
@@ -287,7 +287,7 @@ export default function SimulatorPage() {
       id: `not_${Date.now()}`,
       merchantId: "mch_001",
       alertLevel: "info",
-      message: `Order #${order.id} shipped successfully. Tracking: ${trackingInput}`,
+      message: `ออเดอร์ #${order.id} จัดส่งสำเร็จแล้ว. เลขพัสดุ: ${trackingInput}`,
       orderId: order.id,
       isRead: false,
       createdAt: new Date().toISOString()
@@ -298,14 +298,14 @@ export default function SimulatorPage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Order Lifecycle Simulator</h1>
-          <p className="text-sm text-slate-400">Step-by-step interactive workflow simulator sandbox</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">จำลองขั้นตอนรับออเดอร์</h1>
+          <p className="text-sm text-slate-400">หน้านี้เป็นตัวจำลอง workflow เท่านั้น ยังไม่มีการเชื่อมต่อช่องทางขาย, payment API, SlipOK, AI หรือระบบขนส่งจริง</p>
         </div>
         <button
           onClick={handleReset}
           className="text-xs bg-rose-950 text-rose-400 border border-rose-900/60 px-3 py-1.5 rounded-lg hover:bg-rose-900/20 transition font-bold"
         >
-          Reset Simulation State / เคลียร์ดีโม
+          รีเซ็ตข้อมูลจำลอง (Reset Simulator)
         </button>
       </div>
 
@@ -320,11 +320,11 @@ export default function SimulatorPage() {
           {/* Step 1: Intake */}
           {currentStep === 1 && (
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4 shadow-lg">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">Step 1: Ingest Customer Message</h3>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">ขั้นตอนที่ 1: ข้อความจากลูกค้า (Incoming Customer Message)</h3>
               
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs text-slate-400 font-semibold mb-2">Preset Presets Shortcuts</p>
+                  <p className="text-xs text-slate-400 font-semibold mb-2">ทางลัดข้อความจำลอง (Presets)</p>
                   <div className="flex flex-wrap gap-2">
                     {PRESET_MESSAGES.map((preset, idx) => (
                       <button
@@ -340,7 +340,7 @@ export default function SimulatorPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs text-slate-400 block font-semibold">Feed Channel</label>
+                    <label className="text-xs text-slate-400 block font-semibold">เลือกช่องทาง (Channel)</label>
                     <select
                       value={selectedChannel}
                       onChange={(e) => setSelectedChannel(e.target.value as ChannelType)}
@@ -355,13 +355,13 @@ export default function SimulatorPage() {
                   </div>
 
                   <div className="sm:col-span-2 space-y-1">
-                    <label className="text-xs text-slate-400 block font-semibold">Message Text</label>
+                    <label className="text-xs text-slate-400 block font-semibold">ข้อความ (Message)</label>
                     <input
                       type="text"
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-                      placeholder="e.g. สนใจกางเกงช้างครับ A001"
+                      placeholder="เช่น สนใจกางเกงช้างครับ A001"
                     />
                   </div>
                 </div>
@@ -373,7 +373,7 @@ export default function SimulatorPage() {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <span>Detect Intent & Check Stock / วิเคราะห์ข้อความ</span>
+                  <span>ตรวจจับออเดอร์ (Detect Order)</span>
                 </button>
               </div>
             </div>
@@ -383,18 +383,18 @@ export default function SimulatorPage() {
           {currentStep === 2 && activeIntent && (
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-5 shadow-lg">
               <div className="flex justify-between items-center border-b border-slate-900 pb-3">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">Step 2: Variant Verification & Stock hold</h3>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">ขั้นตอนที่ 2: ตรวจสอบคุณสมบัติและสต็อกสินค้า (Variant & Stock)</h3>
                 <button
                   onClick={() => setCurrentStep(1)}
                   className="text-xs text-slate-500 hover:underline"
                 >
-                  Back to Intake
+                  ย้อนกลับ
                 </button>
               </div>
 
               {stockStatus?.error && (
                 <div className="bg-rose-950/20 border border-rose-900/50 p-3 rounded-lg text-xs text-rose-350 space-y-1">
-                  <p className="font-bold">⚠️ Diagnostic Warning</p>
+                  <p className="font-bold">⚠️ ข้อมูลการวินิจฉัย</p>
                   <p>{stockStatus.error}</p>
                 </div>
               )}
@@ -402,7 +402,7 @@ export default function SimulatorPage() {
               {/* Missing variant options section */}
               {selectedProduct?.hasVariants && !selectedVariant && (
                 <div className="p-4 bg-slate-900 border border-slate-850 rounded-xl space-y-3">
-                  <p className="text-xs font-bold text-amber-400">❓ Missing Variant info detected. Ask customer reply simulation:</p>
+                  <p className="text-xs font-bold text-amber-400">❓ ข้อมูลที่ยังขาด (Missing Fields) - จำลองการถามสี/ไซด์ลูกค้า (Ask Customer for Variant):</p>
                   <div className="flex flex-wrap gap-2">
                     {variantOptions.map((v) => (
                       <button
@@ -414,7 +414,7 @@ export default function SimulatorPage() {
                             : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
                         }`}
                       >
-                        {v.name} (Stock: {v.availableStock})
+                        {v.name} (คลังพร้อมขาย: {v.availableStock})
                       </button>
                     ))}
                   </div>
@@ -424,9 +424,9 @@ export default function SimulatorPage() {
               {/* Out of Stock suggestion alternative */}
               {selectedProduct && stockStatus && !stockStatus.available && (
                 <div className="p-4 bg-slate-900 border border-slate-850 rounded-xl space-y-3">
-                  <p className="text-xs font-bold text-rose-400">❌ Out of Stock. Suggest Alternatives:</p>
+                  <p className="text-xs font-bold text-rose-400">❌ สินค้าหมด (Out of Stock) - แนะนำสินค้าทดแทน:</p>
                   <div className="text-xs text-slate-400">
-                    Alternative Product suggestion: <span className="font-bold text-slate-200">Handwoven Boho Tote Bag (C003)</span> - Available stock: 40 pcs.
+                    แนะนำสินค้าทดแทน: <span className="font-bold text-slate-200">Handwoven Boho Tote Bag (C003)</span> - คลังพร้อมขาย: 40 ชิ้น
                   </div>
                 </div>
               )}
@@ -441,12 +441,12 @@ export default function SimulatorPage() {
                     : "bg-slate-850 text-slate-600 cursor-not-allowed border border-slate-800"
                 }`}
               >
-                Confirm Order & Reserve Stock / ล็อคสต๊อกจองสินค้า
+                ยืนยันออเดอร์และจองสินค้า (Confirm Order & Reserve Stock)
               </button>
 
               {selectedProduct?.hasVariants && !selectedVariant && (
                 <p className="text-xs text-amber-400 font-semibold text-center mt-2">
-                  ⚠️ Please simulate customer variant reply before confirming reservation.
+                  ⚠️ กรุณาจำลองการตอบสี/ไซด์ของลูกค้าก่อนยืนยันการจองสินค้า
                 </p>
               )}
             </div>
@@ -455,26 +455,26 @@ export default function SimulatorPage() {
           {/* Step 3: Reservation and payment */}
           {currentStep === 3 && activeOrder && (
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-5 shadow-lg">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">Step 3: Payment Verification Slip</h3>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">ขั้นตอนที่ 3: ตรวจสอบการชำระเงิน (Mock Payment Verification)</h3>
 
               <div className="bg-slate-900 border border-slate-850 p-4 rounded-xl space-y-2 text-xs">
-                <p className="font-bold text-slate-200">Hold Active: reserved_waiting_payment</p>
+                <p className="font-bold text-slate-200">จองสินค้าสำเร็จ: จองสินค้า / รอจ่าย (Reserved, Waiting Payment)</p>
                 <p className="text-slate-400">
-                  Total price: <span className="font-bold text-emerald-400">{activeOrder.totalAmount} THB</span>.
+                  ยอดเงินที่ต้องชำระ: <span className="font-bold text-emerald-400">{activeOrder.totalAmount} บาท</span>
                 </p>
                 <p className="text-slate-500 text-[10px]">
-                  The stock reservation hold is set. Choose simulated payment status reference code verification:
+                  ระบบล็อคสต็อกสินค้าไว้เรียบร้อยแล้ว กรุณาเลือกสถานะจำลองการสแกนสลิปชำระเงิน:
                 </p>
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs text-slate-400 block font-semibold">Simulate Slip Quality</label>
+                <label className="text-xs text-slate-400 block font-semibold">เลือกรูปแบบการโอนเงิน (สลิปจำลอง)</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { value: "valid", label: "Valid Slip" },
-                    { value: "invalid", label: "Invalid/Fake Slip" },
-                    { value: "duplicate", label: "Duplicate Ref" },
-                    { value: "mismatch", label: "Lower Amount" }
+                    { value: "valid", label: "สลิปถูกต้อง (Valid)" },
+                    { value: "invalid", label: "สลิปไม่ถูกต้อง (Invalid)" },
+                    { value: "duplicate", label: "สลิปซ้ำ (Duplicate)" },
+                    { value: "mismatch", label: "ยอดเงินไม่ตรง (Mismatch)" }
                   ].map((opt) => (
                     <button
                       key={opt.value}
@@ -495,7 +495,7 @@ export default function SimulatorPage() {
                 onClick={handleVerifyPayment}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 rounded-lg text-xs transition"
               >
-                Scan Slip & Verify Payment / ตรวจสอบสลิป (จำลอง)
+                ตรวจชำระเงินแบบจำลอง (Mock Payment Verification)
               </button>
             </div>
           )}
@@ -503,13 +503,13 @@ export default function SimulatorPage() {
           {/* Step 4: Address and Logistics Dispatch */}
           {currentStep === 4 && activeOrder && (
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-5 shadow-lg">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">Step 4: Shipping Capture & Logistics Queue</h3>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider text-emerald-400">ขั้นตอนที่ 4: บันทึกข้อมูลที่อยู่ผู้รับและจัดคิวส่งสินค้า</h3>
 
               {activeOrder.status === "issue" ? (
                 <div className="bg-rose-950/20 border border-rose-900/50 p-4 rounded-xl space-y-2 text-xs text-rose-300">
-                  <p className="font-bold">⚠️ Order Paused in Issue cases queue</p>
+                  <p className="font-bold">⚠️ ออเดอร์ถูกระงับเนื่องจากตรวจสลิปไม่ผ่าน / มีปัญหา (Issue)</p>
                   <p className="leading-relaxed">
-                    The payment scan flagged exceptions. Outstanding balance remains. The system will hold coordinates capture until resolved.
+                    ระบบจำลองพบปัญหาในการโอนเงินหรือยอดไม่ตรง ระบบจะระงับการบันทึกที่อยู่จนกว่าแอดมินจะกดยืนยันยอดรับเงินจริงด้วยตัวเอง
                   </p>
                   <button
                     onClick={() => {
@@ -521,21 +521,21 @@ export default function SimulatorPage() {
                       const overrideEvent = createOrderEvent(
                         activeOrder.id,
                         "manual_override" as const,
-                        "Manual payment verification override executed by administrator. Status forced to paid_waiting_address. (Demo Mode only)"
+                        "แอดมินตรวจสอบยอดโอนแล้วกดยืนยันรับยอดเงินเข้าระบบด้วยตัวเอง บังคับสถานะเป็น รอที่อยู่ (Paid, Waiting Address) [เฉพาะโหมดเดโม]"
                       );
                       setActiveEvents((prev) => [overrideEvent, ...prev]);
                       addSimulatedEvent(overrideEvent);
                     }}
                     className="bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold px-3 py-1.5 rounded border border-slate-700 transition"
                   >
-                    Force Manual Payment Override
+                    กดยืนยันรับยอดเงินโอนด้วยแอดมินเอง (Override)
                   </button>
                 </div>
               ) : (
                 <div className="space-y-5">
                   {/* Address Collection */}
                   <div className="space-y-3">
-                    <label className="text-xs text-slate-400 block font-semibold">Simulate Customer Address Input</label>
+                    <label className="text-xs text-slate-400 block font-semibold">จำลองการกรอกที่อยู่ของลูกค้า (Collect Address)</label>
                     <textarea
                       value={addressInput}
                       onChange={(e) => setAddressInput(e.target.value)}
@@ -548,7 +548,7 @@ export default function SimulatorPage() {
                         onClick={handleSubmitAddress}
                         className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition"
                       >
-                        Submit Address / บันทึกที่อยู่
+                        บันทึกที่อยู่ลูกค้า (Collect Address)
                       </button>
                     )}
                   </div>
@@ -556,7 +556,7 @@ export default function SimulatorPage() {
                   {/* Tracking input */}
                   {(activeOrder.status === "ready_to_ship" || activeOrder.status === "shipped") && (
                     <div className="space-y-3 border-t border-slate-850 pt-4">
-                      <label className="text-xs text-slate-400 block font-semibold">Simulate Admin Dispatches Tracking Code</label>
+                      <label className="text-xs text-slate-400 block font-semibold">จำลองการออกเลขพัสดุ (Add Tracking)</label>
                       <div className="flex gap-2">
                         <input
                           type="text"
@@ -570,7 +570,7 @@ export default function SimulatorPage() {
                             onClick={handleAddTracking}
                             className="bg-indigo-500 hover:bg-indigo-400 text-white font-bold px-4 py-2 rounded-lg text-xs transition"
                           >
-                            Dispatch Order / ส่งพัสดุ
+                            ย้ายเข้าคิวพร้อมส่ง & เพิ่มเลขพัสดุ (Move to Ready to Ship & Add Tracking)
                           </button>
                         )}
                       </div>
@@ -579,7 +579,7 @@ export default function SimulatorPage() {
 
                   {activeOrder.status === "shipped" && (
                     <div className="bg-emerald-950/20 border border-emerald-900/50 p-4 rounded-xl text-xs text-emerald-300 text-center font-bold">
-                      🎉 Simulation Loop Completed! Order has been packaged, tracked, and dispatched.
+                      🎉 จำลองขั้นตอนสำเร็จ! ออเดอร์นี้ถูกจัดทำคิว ส่งออกพัสดุ และบันทึกประวัติเข้าระบบเรียบร้อย
                     </div>
                   )}
                 </div>

@@ -13,7 +13,7 @@ interface SimulatorStepCardProps {
 export default function SimulatorStepCard({ currentStep, steps }: SimulatorStepCardProps) {
   return (
     <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow-sm">
-      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-4">Simulation Stage Flow</p>
+      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-4">ขั้นตอนการจำลอง (Simulation Flow)</p>
       
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {steps.map((step, idx) => {

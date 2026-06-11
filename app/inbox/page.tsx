@@ -20,6 +20,17 @@ export default function UnifiedInboxPage() {
     }
   };
 
+  const getStatusText = (status: IncomingMessage["status"]) => {
+    switch (status) {
+      case "pending":
+        return "รอประมวลผล (Pending)";
+      case "processed":
+        return "ประมวลผลแล้ว (Processed)";
+      case "ignored":
+        return "ละเว้น (Ignored)";
+    }
+  };
+
   const markProcessed = (id: string) => {
     const updated = messages.map((msg) => {
       if (msg.id === id) {
@@ -36,15 +47,15 @@ export default function UnifiedInboxPage() {
   return (
     <div className="space-y-6 h-full flex flex-col">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Unified Inbox</h1>
-        <p className="text-sm text-slate-400">Simulated multi-channel customer communications</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">กล่องข้อความรวมหลายช่องทาง (Unified Inbox)</h1>
+        <p className="text-sm text-slate-400">จำลองการสื่อสารกับลูกค้าจากหลากหลายช่องทางขายแบบเรียลไทม์</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-stretch min-h-[500px]">
         {/* Left Column: Messages List */}
         <div className="lg:col-span-1 bg-slate-950 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
           <div className="p-4 border-b border-slate-800 bg-slate-950/60 font-semibold text-slate-200">
-            Intake Queue ({messages.length})
+            คิวข้อความขาเข้า ({messages.length})
           </div>
           <div className="flex-1 overflow-y-auto divide-y divide-slate-900">
             {messages.map((msg) => {
@@ -74,14 +85,14 @@ export default function UnifiedInboxPage() {
                   <div className="flex justify-between items-center mt-1">
                     {msg.intent ? (
                       <span className="text-[10px] bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded font-mono">
-                        {msg.intent.detectedIntent}
+                        {INTENT_LABELS[msg.intent.detectedIntent].split(" (")[0]}
                       </span>
                     ) : (
-                      <span className="text-[10px] bg-slate-900 text-slate-500 px-2 py-0.5 rounded">No Intent</span>
+                      <span className="text-[10px] bg-slate-900 text-slate-500 px-2 py-0.5 rounded">ไม่มี Intent</span>
                     )}
 
                     <span className={`text-[9px] px-2 py-0.5 rounded border uppercase ${getStatusBadge(msg.status)}`}>
-                      {msg.status}
+                      {getStatusText(msg.status)}
                     </span>
                   </div>
                 </button>
@@ -103,10 +114,10 @@ export default function UnifiedInboxPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-400">
-                      Channel: <span className="font-semibold">{CHANNEL_LABELS[selectedMessage.channelType].label}</span>
+                      ช่องทาง: <span className="font-semibold">{CHANNEL_LABELS[selectedMessage.channelType].label}</span>
                     </span>
                     <span className="text-slate-800">•</span>
-                    <span className="text-xs text-slate-550 text-slate-400">
+                    <span className="text-xs text-slate-400">
                       {new Date(selectedMessage.timestamp).toLocaleString()}
                     </span>
                   </div>
@@ -114,14 +125,14 @@ export default function UnifiedInboxPage() {
 
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2.5 py-1 rounded-lg border uppercase ${getStatusBadge(selectedMessage.status)}`}>
-                    {selectedMessage.status}
+                    {getStatusText(selectedMessage.status)}
                   </span>
                   {selectedMessage.status === "pending" && (
                     <button
                       onClick={() => markProcessed(selectedMessage.id)}
                       className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg transition"
                     >
-                      Process / Confirm
+                      ประมวลผล / ยืนยันออเดอร์
                     </button>
                   )}
                 </div>
@@ -130,7 +141,7 @@ export default function UnifiedInboxPage() {
               {/* Message Body */}
               <div className="p-6 space-y-6 flex-1 overflow-y-auto">
                 <div className="space-y-2">
-                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Raw Message / ข้อความที่ส่งเข้า</p>
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">ข้อความดิบ (Raw Message)</p>
                   <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 leading-relaxed font-sans text-sm">
                     {selectedMessage.rawContent}
                   </div>
@@ -138,15 +149,14 @@ export default function UnifiedInboxPage() {
 
                 {selectedMessage.mediaUrl && (
                   <div className="space-y-2">
-                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Attached Media / สลิปหรือรูปประกอบ</p>
+                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">สื่อแนบ (Attached Media)</p>
                     <div className="max-w-xs rounded-xl overflow-hidden border border-slate-800 bg-slate-900 p-2">
-                      {/* Placeholder style since no actual external slip image is loaded */}
                       <div className="h-40 bg-indigo-950/40 flex flex-col justify-center items-center text-center p-4 rounded-lg">
                         <svg className="w-8 h-8 text-indigo-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <p className="text-xs font-semibold text-slate-200">Payment Slip Uploaded</p>
-                        <p className="text-[10px] text-slate-500 mt-1">Image Attachment Simulated</p>
+                        <p className="text-xs font-semibold text-slate-200">อัปโหลดสลิปเงินโอนแล้ว</p>
+                        <p className="text-[10px] text-slate-500 mt-1">รูปภาพจำลองสำหรับการสั่งซื้อ</p>
                       </div>
                     </div>
                   </div>
@@ -154,18 +164,18 @@ export default function UnifiedInboxPage() {
 
                 {/* Intent Parser Box */}
                 <div className="space-y-3">
-                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">AI-Assisted Intent Parsing Simulation</p>
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">ข้อมูลที่ระบบจำลองอ่านได้ด้วย NLP (AI-Assisted Intent Parsing)</p>
                   <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/50">
                     <div className="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center">
                       <div>
-                        <span className="text-xs font-semibold text-slate-400">Intent Model</span>
+                        <span className="text-xs font-semibold text-slate-400">Intent ที่ตรวจพบ (Detected Intent)</span>
                         <p className="text-sm font-bold text-white mt-0.5">
-                          {selectedMessage.intent ? INTENT_LABELS[selectedMessage.intent.detectedIntent] : "None Detected"}
+                          {selectedMessage.intent ? INTENT_LABELS[selectedMessage.intent.detectedIntent] : "ไม่พบข้อมูล"}
                         </p>
                       </div>
                       {selectedMessage.intent && (
                         <div className="text-right">
-                          <span className="text-xs font-semibold text-slate-400">Confidence</span>
+                          <span className="text-xs font-semibold text-slate-400">ความแม่นยำ (Confidence)</span>
                           <p className="text-sm font-bold text-emerald-400 mt-0.5">
                             {(selectedMessage.intent.confidenceScore * 100).toFixed(0)}%
                           </p>
@@ -184,7 +194,7 @@ export default function UnifiedInboxPage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-500">No parameters parsed from message content.</p>
+                        <p className="text-xs text-slate-500">ไม่มีข้อมูลที่ประมวลผลได้จากข้อความ</p>
                       )}
                     </div>
                   </div>
@@ -196,8 +206,8 @@ export default function UnifiedInboxPage() {
               <svg className="w-12 h-12 text-slate-700 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              <p className="font-semibold text-slate-400">No message selected</p>
-              <p className="text-xs mt-1 text-slate-650">Select an item from the intake feed to view NLP extractions.</p>
+              <p className="font-semibold text-slate-400">ไม่ได้เลือกข้อความ</p>
+              <p className="text-xs mt-1 text-slate-500">เลือกข้อความในคิวทางซ้ายเพื่อประเมิน NLP Extraction</p>
             </div>
           )}
         </div>

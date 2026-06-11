@@ -31,7 +31,7 @@ export default function OrderLifecycleTimeline({ events }: OrderLifecycleTimelin
 
   return (
     <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
-      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Simulation Event Stream</p>
+      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">ประวัติเหตุการณ์จำลอง (Simulation Events)</p>
       
       <div className="relative border-l border-slate-800 pl-4 space-y-4">
         {events.map((evt) => (
@@ -43,7 +43,7 @@ export default function OrderLifecycleTimeline({ events }: OrderLifecycleTimelin
               <span className={`px-2 py-0.5 rounded text-[9px] font-mono border font-semibold ${getEventBadgeClass(evt.type)}`}>
                 {evt.type}
               </span>
-              <span className="text-[9.5px] text-slate-550 text-slate-500 font-mono">
+              <span className="text-[9.5px] text-slate-500 font-mono">
                 {new Date(evt.createdAt).toLocaleTimeString()}
               </span>
             </div>
@@ -52,7 +52,7 @@ export default function OrderLifecycleTimeline({ events }: OrderLifecycleTimelin
         ))}
 
         {events.length === 0 && (
-          <p className="text-slate-500 text-center py-4 text-xs">No simulator log logs emitted yet.</p>
+          <p className="text-slate-500 text-center py-4 text-xs">ยังไม่มีประวัติการจำลองในระบบ</p>
         )}
       </div>
     </div>

@@ -16,10 +16,10 @@ export default function NotificationsPage() {
   }, []);
 
   const alertModes: { value: MerchantNotificationMode; title: string; desc: string }[] = [
-    { value: "all", title: "All Alerts / เตือนทุกรายการ", desc: "Receive alerts for stock updates, payment intakes, new orders, and failures." },
-    { value: "important_only", title: "Important Only / ปัญหาและชำระเงิน", desc: "Filter down to payment issues, duplicate slips, or critical low stock alerts." },
-    { value: "live_sale_mode", title: "Live Sale Mode / โหมดขายสด", desc: "High-priority alerts tailored for comment matches and variant shortages during live broadcasts." },
-    { value: "off", title: "Alerts Off / ปิดแจ้งเตือน", desc: "Turn off background visual banners. Silent queue mode only." },
+    { value: "all", title: "ทั้งหมด (All Alerts)", desc: "รับแจ้งเตือนทุกกรณี เช่น อัปเดตสต็อกสินค้า, การรับชำระเงิน, ออเดอร์ใหม่ และเคสขัดข้อง" },
+    { value: "important_only", title: "เฉพาะสำคัญ (Important Only)", desc: "แจ้งเตือนเฉพาะปัญหาการจ่ายเงิน สลิปซ้ำ หรือระดับสินค้าในคลังใกล้หมดขั้นวิกฤต" },
+    { value: "live_sale_mode", title: "โหมดไลฟ์ขายของ (Live Sale Mode)", desc: "เน้นการแจ้งเตือนลำดับความสำคัญสูง เช่น การพิมพ์จองสินค้าคีย์เวิร์ด และสต็อกสินค้าขาดระหว่างไลฟ์สด" },
+    { value: "off", title: "ปิด (Alerts Off)", desc: "ปิดการแสดงแถบเตือนความจำในระบบแบบเรียลไทม์ทั้งหมด" },
   ];
 
   // Filter notification feed according to selected mode
@@ -38,14 +38,14 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Notification Center</h1>
-        <p className="text-sm text-slate-400">Configure real-time alerts for incoming orders, payments, and issues</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">ศูนย์แจ้งเตือนร้านค้า (Notification Center)</h1>
+        <p className="text-sm text-slate-400">ตั้งค่าระดับการแจ้งเตือนและการเตือนเหตุการณ์สำคัญในระบบ</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left Side: Alert Mode Selector */}
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4 shadow-lg">
-          <h3 className="text-md font-bold text-white border-b border-slate-800 pb-3">Alert Settings (Simulated)</h3>
+          <h3 className="text-md font-bold text-white border-b border-slate-800 pb-3">โหมดแจ้งเตือน (Alert Mode)</h3>
           <div className="space-y-3">
             {alertModes.map((m) => (
               <button
@@ -70,10 +70,10 @@ export default function NotificationsPage() {
         {/* Right Side: Notifications Feed */}
         <div className="lg:col-span-2 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-lg flex flex-col min-h-[400px]">
           <div className="p-4 border-b border-slate-800 bg-slate-950/60 flex justify-between items-center">
-            <span className="font-semibold text-slate-200">Alert History Log</span>
+            <span className="font-semibold text-slate-200">แจ้งเตือนล่าสุด (Recent Notifications)</span>
             {filteredNotifications.some((n) => !n.isRead) && (
               <button onClick={markAllRead} className="text-xs text-emerald-400 hover:underline">
-                Mark all as read
+                ทำเครื่องหมายว่าอ่านแล้วทั้งหมด
               </button>
             )}
           </div>
@@ -114,7 +114,7 @@ export default function NotificationsPage() {
                       <span className={`text-[10px] uppercase font-bold tracking-wider ${
                         not.alertLevel === "critical" ? "text-rose-400" : not.alertLevel === "warning" ? "text-amber-400" : "text-slate-400"
                       }`}>
-                        {not.alertLevel}
+                        {not.alertLevel === "critical" ? "วิกฤต (Critical)" : not.alertLevel === "warning" ? "แจ้งเตือน (Warning)" : "ทั่วไป (Info)"}
                       </span>
                       <span className="text-[10px] text-slate-500">{new Date(not.createdAt).toLocaleTimeString()}</span>
                     </div>
@@ -128,8 +128,8 @@ export default function NotificationsPage() {
                 <svg className="w-10 h-10 text-slate-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <p className="font-semibold text-slate-400">No alerts matching settings</p>
-                <p className="text-[11px] text-slate-650 mt-1">Configure active level or check filters.</p>
+                <p className="font-semibold text-slate-400">ไม่พบประวัติการแจ้งเตือนตามที่กำหนด</p>
+                <p className="text-[11px] text-slate-500 mt-1">ลองเปลี่ยนระดับการแจ้งเตือนหรือประมวลผลออเดอร์ใหม่เพิ่ม</p>
               </div>
             )}
           </div>

@@ -19,7 +19,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
 
   const navigationItems: SidebarItem[] = [
     {
-      name: "Dashboard / แดชบอร์ด",
+      name: "แดชบอร์ด (Dashboard)",
       href: "/dashboard",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -28,7 +28,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       ),
     },
     {
-      name: "Unified Inbox / กล่องข้อความ",
+      name: "กล่องข้อความรวม (Inbox)",
       href: "/inbox",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -37,7 +37,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       ),
     },
     {
-      name: "Simulator / จำลองการสั่งซื้อ",
+      name: "จำลองออเดอร์ (Simulator)",
       href: "/simulator",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,7 +47,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       ),
     },
     {
-      name: "Orders / ออเดอร์",
+      name: "ออเดอร์ (Orders)",
       href: "/orders",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -56,7 +56,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       ),
     },
     {
-      name: "Products & Stock / คลังสินค้า",
+      name: "สินค้า (Products)",
       href: "/products",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -65,7 +65,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       ),
     },
     {
-      name: "Notifications / แจ้งเตือน",
+      name: "แจ้งเตือน (Notifications)",
       href: "/notifications",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,7 +74,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       ),
     },
     {
-      name: "Settings / ตั้งค่าระบบ",
+      name: "ตั้งค่า (Settings)",
       href: "/settings",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,7 +84,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       ),
     },
     {
-      name: "Architecture & About / เกี่ยวกับระบบ",
+      name: "เกี่ยวกับระบบ (About)",
       href: "/about",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,7 +140,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-300">Chaba Fashion</p>
-              <p className="text-[10px] text-slate-500">Sprint 0A Foundation Lock</p>
+              <p className="text-[10px] text-slate-500">Sprint 0B (ระบบจำลอง)</p>
             </div>
           </div>
         </div>
